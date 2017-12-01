@@ -587,6 +587,15 @@ struct AstInterface
 
     bool    mNotParse;      // 解析処理を行わない時true THEOLIZER_NO_ANALYZE
 
+//      ---<<< 定義終了位置 >>>---
+
+    std::map<clang::TagDecl*, FullSourceLoc>    mEndMarkerList;
+    void addEndMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
+    {
+        FullSourceLoc aLoc = gASTContext->getFullLoc(iLoc).getSpellingLoc();
+        mEndMarkerList.emplace(iTagDecl, aLoc);
+    }
+
 //      ---<<< コンストラクタ >>>---
 
     AstInterface() : 

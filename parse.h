@@ -77,6 +77,197 @@ class ASTVisitor : public DeclVisitor<ASTVisitor, bool>
 public:
 
 //----------------------------------------------------------------------------
+//      class/structの処理
+//          enumは非侵入型処理なので、structで実装されることになる。
+//          2015/05/14現在enumは非対応。
+//
+//          2016/01/06
+//          TheolizerVersion<>も直接呼ばれる。
+//              恐らく、クラス外定義しているから呼ばれると思う。
+//          また、TheolizerVersion<>のdecls()に再度TheolizerVersion<>が現れる。
+//              こちらはgetQualifiedNameAsString()でテンプレート・パラメータも
+//              含まれる。取り除く方法がないか幾つかトライしたが失敗。
+//          入口でTheolizerVersion<>判定して処理する。
+//----------------------------------------------------------------------------
+
+public:
+    virtual bool VisitCXXRecordDecl(CXXRecordDecl *iCXXRecordDecl)
+    {
+        if (iCXXRecordDecl->isThisDeclarationADefinition())
+        {
+#if 0
+            for (auto decl : iCXXRecordDecl->decls())
+            {
+                Visit(decl);
+            }
+#else
+            enumerateDecl(iCXXRecordDecl, mSearchEnd);
+#endif
+        }
+        return true;
+    }
+
+//----------------------------------------------------------------------------
+//      関数処理
+//          GenerationMarkerStart(), GenerationMarkerEnd()の位置を取り出す。
+//----------------------------------------------------------------------------
+    virtual bool VisitFunctionDecl(clang::FunctionDecl* iFunctionDecl)
+    {
+        // StmtClass名テーブル
+        constexpr static char const* StmtClassTable[]=
+        {
+            "NoStmtClass",
+            #define ABSTRACT_STMT(STMT)
+            #define STMT(CLASS, PARENT) #CLASS,
+            #include "clang/AST/StmtNodes.inc"
+            nullptr
+        };
+
+
+
+        if (!iFunctionDecl->getIdentifier())
+    return true;
+
+        if (!iFunctionDecl->getName().startswith("GenerationMarker"))
+    return true;
+
+        llvm::outs() << iFunctionDecl->getNameAsString() << "\n";
+llvm::outs().flush();
+
+//      ---<<< パラメータ取り出し >>>---
+
+        // GenerationMarkerEnd()処理中
+        if (mSearchEnd)
+        {
+            if ((iFunctionDecl->getName() == "GenerationMarkerEnd")
+             && (iFunctionDecl->param_size() != 1))
+            {
+                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
+                    "Do not modify the source generated.");
+    return true;
+            }
+        }
+
+        // GenerationMarkerStart()処理中
+        else
+        {
+            if ((iFunctionDecl->getName() == "GenerationMarkerStart")
+             && (iFunctionDecl->param_size() != 2))
+            {
+                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
+                    "GenerationMarkerStart() has 2 parameters. Second is inc-file path.");
+    return true;
+            }
+
+            // 第2パラメータがchar const*であることをチェック
+            bool aIsCharConstPointer = false;
+            clang::ParmVarDecl* aParam=iFunctionDecl->getParamDecl(1);
+            QualType qt = aParam->getType();
+llvm::outs() << "GenerationMarkerStart( ," << qt.getAsString() << ")\n";
+llvm::outs() << "    " << qt->isPointerType() << "\n";
+
+            clang::PointerType const* pt = qt->getAs<clang::PointerType>();
+            if (pt)
+            {
+                QualType pointee = pt->getPointeeType();
+llvm::outs() << "    " << pointee.getAsString() << "\n";
+llvm::outs() << "    " << pointee.isConstQualified() << ", " << pointee->isCharType() << "\n";
+                if (pointee.isConstQualified() && pointee->isCharType())
+                {
+                    aIsCharConstPointer = true;
+llvm::outs() << "    OK!!\n";
+                }
+            }
+llvm::outs().flush();
+            if (!aIsCharConstPointer)
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() second parameter is %0.(modify to 'char const*')")
+                    << qt.getAsString();
+    return true;
+            }
+            clang::Expr* aDefault = aParam->getDefaultArg();
+            if (aDefault == nullptr)
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() second parameter has default.(inc-file path)");
+    return true;
+            }
+llvm::outs() << "    aDefault->getStmtClass()=" << aDefault->getStmtClass()
+             << " (" << StmtClassTable[aDefault->getStmtClass()] << ")\n";
+            if (aDefault->getStmtClass() != clang::Stmt::ImplicitCastExprClass)
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() unknown error.(ImplicitCastExpr)");
+    return true;
+            }
+            clang::ImplicitCastExpr* ice = static_cast<clang::ImplicitCastExpr*>(aDefault);
+            clang::Expr* aStringExpr = ice->getSubExpr();
+
+llvm::outs() << "    aStringExpr->getStmtClass()=" << aStringExpr->getStmtClass()
+             << " (" << StmtClassTable[aStringExpr->getStmtClass()] << ")\n";
+llvm::outs() << "    StringLiteralClass=" << clang::Stmt::StringLiteralClass << "\n";
+            if (aStringExpr->getStmtClass() != clang::Stmt::StringLiteralClass)
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() unknown error.(StringLiteral)");
+    return true;
+            }
+            StringRef aString = static_cast<clang::StringLiteral*>(aStringExpr)->getString();
+llvm::outs() << "    aString=" << aString.str() << "\n";
+llvm::outs().flush();
+aParam->dump();
+        }
+
+        // 対象の型取り出し
+        clang::ParmVarDecl* aParam=iFunctionDecl->getParamDecl(0);
+        QualType qt = aParam->getType();
+        switch (qt->getTypeClass())
+        {
+        case Type::Enum:
+            {
+llvm::outs() << "enum : " << qt.getAsString() << "\n";
+llvm::outs().flush();
+                EnumType const* et = qt->getAs<EnumType>();
+                ERROR(!et, iFunctionDecl, true);
+
+                EnumDecl* aTargetEnum = et->getDecl();
+                ERROR(!aTargetEnum, iFunctionDecl, true);
+                if (mSearchEnd)
+                {
+                    mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation());
+                }
+                else
+                {
+                }
+            }
+            break;
+
+        case Type::Record:
+llvm::outs() << "class : " << qt.getAsString() << "\n";
+llvm::outs().flush();
+            break;
+        }
+
+#if 0
+
+//      ---<<< 自動生成位置記録 >>>---
+
+FullSourceLoc loc = gASTContext->getFullLoc(iFunctionDecl->getLocStart());
+ASTANALYZE_OUTPUT("    TheorideMarker(",
+                  wUniqueClass->getQualifiedNameAsString(), ") : ",
+                  loc.printToString(*gSourceManager));
+ASTANALYZE_OUTPUT("    wUniqueClass=", wUniqueClass);
+        mAstOutput.mGeneratingLocations.emplace
+        (
+            wUniqueClass,
+            iFunctionDecl
+        );
+#endif
+        return true;
+    }
+
+//----------------------------------------------------------------------------
 //      各種追跡処理
 //----------------------------------------------------------------------------
 
@@ -91,11 +282,11 @@ public:
         if (name.equals("std"))
         {
             AutoFalse auto_false(mIsStdSpace);
-            enumerateDecl(iNamespaceDecl);
+            enumerateDecl(iNamespaceDecl, mSearchEnd);
     return true;
         }
 
-        enumerateDecl(iNamespaceDecl);
+        enumerateDecl(iNamespaceDecl, mSearchEnd);
         return true;
     }
 
@@ -106,11 +297,11 @@ public:
         switch (iLinkageSpecDecl->getLanguage())
         {
         case LinkageSpecDecl::lang_c:           // "C" : NOP
-            enumerateDecl(iLinkageSpecDecl);
+            enumerateDecl(iLinkageSpecDecl, mSearchEnd);
             break;
 
         case LinkageSpecDecl::lang_cxx:         // "C++"
-            enumerateDecl(iLinkageSpecDecl);
+            enumerateDecl(iLinkageSpecDecl, mSearchEnd);
             break;
         }
         return true;
@@ -120,9 +311,11 @@ public:
 //      Declリスト1レベルの枚挙処理
 //----------------------------------------------------------------------------
 
+    bool mSearchEnd;
 public:
-    void enumerateDecl(DeclContext *iDeclContext)
+    void enumerateDecl(DeclContext *iDeclContext, bool iSearchEnd)
     {
+        mSearchEnd = iSearchEnd;
         for (auto decl : iDeclContext->decls())
         {
             Visit(decl);
@@ -144,6 +337,7 @@ private:
 
 public:
     ASTVisitor(AstInterface& iAstInterface) :
+        mSearchEnd(false),
         mAstInterface(iAstInterface),
         mIsStdSpace(false)
     { }
@@ -178,9 +372,14 @@ private:
 //      AST解析とソース修正処理呼び出し
 //----------------------------------------------------------------------------
 
+    bool    mSearchEnd;
     virtual void HandleTranslationUnit(ASTContext &iContext)
     {
-        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl());
+        // GenerationMarkerEnd()を見つけておく
+        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl(), true);
+
+        // GenerationMarkerStart()を処理する
+        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl(), false);
     }
 
 //----------------------------------------------------------------------------
@@ -302,6 +501,8 @@ int parse
 //----------------------------------------------------------------------------
 //      CommonOptionsParserへ渡すためのパラメータ生成
 //----------------------------------------------------------------------------
+llvm::outs() << "parse(" << iTarget << ")\n";
+llvm::outs().flush();
 
     llvm::opt::ArgStringList aArgStringList;
 

@@ -209,10 +209,15 @@ endif()
 enable_testing()
 
 set(ORIGINAL_COMPILER "${CMAKE_CXX_COMPILER}")
+set(PARAMETERS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE " " ";" PARAMETERS "${PARAMETERS}")
+
 add_test(NAME TheolizerDriver
     COMMAND $<TARGET_FILE:TheolizerDriver>
+        ""
         -Dtheolizer_original_compiler=${ORIGINAL_COMPILER}
         -DTHEOLIZER_DO_PROCESS
-        test.c
+        ${PARAMETERS}
+        test.cpp
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"
 )

@@ -531,8 +531,6 @@ int main(int iArgc, const char **iArgv)
 {
     gExclusiveControl.reset(new ExclusiveControl(kTheolizerFileLock));
 
-    int i;
-
 //----------------------------------------------------------------------------
 //      自exeパス名操作
 //----------------------------------------------------------------------------
@@ -547,6 +545,21 @@ return 1;
 //----------------------------------------------------------------------------
 //      パラメータ取り出し
 //----------------------------------------------------------------------------
+
+    for (int i=0; i < iArgc; ++i)
+    {
+        llvm::outs() << "    iArgv[" << i << "] = ";
+        if (iArgv[i] == nullptr)
+        {
+            llvm::outs() << "<nullptr>";
+        }
+        else
+        {
+            llvm::outs() << "\"" << iArgv[i] << "\"";
+        }
+        llvm::outs() << "\n";
+    }
+    llvm::outs().flush();
 
     // パラメータをaArgvへ設定する
     SmallVector<char const*, 256> aArgv;
@@ -653,7 +666,6 @@ return 1;
 
         if (StringRef(arg).startswith(ARG_THEOLIZER))
 return TheolizerProc(aExePath, arg);
-
         if (StringRef(arg).equals("-help"))         aIsClangHelp  = true;
         if (StringRef(arg).equals("--help"))        aIsClangHelp  = true;
         if (StringRef(arg).equals("--version"))     aIsVersion    = true;
@@ -784,7 +796,7 @@ return 1;
             clangD::JobList &jobs = compilation->getJobs();
 
             // ジョブ毎に処理
-            i=-1;
+            int i=-1;
             for(const auto &job : jobs)
             {
                 ++i;
@@ -829,7 +841,7 @@ return aRet;
     llvm::opt::ArgStringList   aArgvForCall;
     aArgvForCall.push_back(aOriginalPath.c_str());
     char const* aDefArg=nullptr;
-    for (i=1; i < iArgc; ++i)
+    for (int i=1; i < iArgc; ++i)
     {
         if (StringRef(iArgv[i]).equals(""))
     continue;
