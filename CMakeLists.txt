@@ -112,8 +112,7 @@ set(BIN_DIR bin)
 #       target definition
 #-----------------------------------------------------------------------------
 
-set(CURRENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-include(sources_list.cmake)
+set(THEOLIZER_DRIVER_LIST driver.cpp avoid-trouble.h header_includes.h utility.h parse.h)
 
 message(STATUS "Sources of TheolizerDriver")
 foreach(SOURCE IN LISTS THEOLIZER_DRIVER_LIST)
