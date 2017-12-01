@@ -47,7 +47,7 @@
 
 #include "header_includes.h"    // 必要な外部ヘッダのインクルード
 #include "utility.h"            // ユーティリティ
-#include "modify.h"             // ソース修正
+//#include "modify.h"             // ソース修正
 #include "parse.h"              // AST解析と必要情報収集
 
 // ***************************************************************************
@@ -78,7 +78,6 @@ DriverMode getDriverMode(std::string const& iStem)
     {
        ret = cpp;
     }
-    DRIVER_OUTPUT("getDriverMode(", iStem, ") -> ", aStem, " ret=", ret);
 
     return ret;
 }
@@ -94,7 +93,6 @@ std::string makeRenamePath(std::string const& iExePath)
     aRenamePath.append(llvmS::path::stem(iExePath));
     aRenamePath.append("RenamedByTheolizer");
     aRenamePath.append(llvmS::path::extension(iExePath));
-    DRIVER_OUTPUT("aRenamePath = ", aRenamePath);
 
     return aRenamePath;
 }
@@ -130,10 +128,6 @@ public:
     return;
         }
 
-        DRIVER_OUTPUT("ExecuteMan");
-        DRIVER_OUTPUT("    iExePath = ", iExePath);
-        DRIVER_OUTPUT("    mTempFilePath = ", mTempFilePath.str());
-
         // リダイレクト
         const StringRef *aRedirects[3];
         StringRef       aEmpty;
@@ -153,13 +147,9 @@ public:
         }
 
         bool execution_failed;
-        int ret = llvmS::ExecuteAndWait(iExePath, ioArgv.data(), nullptr,
+        llvmS::ExecuteAndWait(iExePath, ioArgv.data(), nullptr,
                                         aRedirects, 0, 0, &mErrorMessage,
                                         &execution_failed);
-        DRIVER_OUTPUT("chdir(", aCurrentDir, ")");
-        DRIVER_OUTPUT("ExecuteAndWait(", iExePath, ") = ", ret);
-        DRIVER_OUTPUT("    execution_failed = ", execution_failed);
-        DRIVER_OUTPUT("    mErrorMessage = ", mErrorMessage);
         if (execution_failed)
     return;
 
@@ -177,10 +167,6 @@ public:
             std::istreambuf_iterator<char> last;
             mResult = std::string(it, last);
         }
-
-        DRIVER_OUTPUT("------------------------- mResult");
-        DRIVER_OUTPUT(mResult);
-        DRIVER_OUTPUT("-------------------------");
     }
 
     // デストラクタ(一時ファイル削除)
@@ -257,6 +243,17 @@ std::string getCanonicalPath(std::string const& iPath)
 //      TheolizerDriver専用処理
 // ***************************************************************************
 
+#define THEOLIZER_INTERNAL_PRODUCT_NAME "Theolizer"
+#define THEOLIZER_INTERNAL_COPYRIGHT    "Copyright (C) 2016 Yohinori Tahara (Theoride Technology)"
+
+std::string getVersionString()
+{
+    std::string ret(THEOLIZER_INTERNAL_PRODUCT_NAME);
+    ret += THEOLIZER_INTERNAL_COPYRIGHT "\n";
+
+    return ret;
+}
+
 int TheolizerProc(std::string const& iExePath, char const* iArg)
 {
 //----------------------------------------------------------------------------
@@ -266,7 +263,7 @@ int TheolizerProc(std::string const& iExePath, char const* iArg)
     if (StringRef(iArg).equals(kTheolizerVersionParam))
     {
 
-        llvm::outs() << theolizer::getVersionString() << "\n";
+        llvm::outs() << getVersionString() << "\n";
 return 0;
     }
 
@@ -298,11 +295,9 @@ return 1;
         aCurrent = aCurrent.second.split(';');
 
         std::string aTargetPath = aCurrent.first;
-        DRIVER_OUTPUT("aTargetPath                = ", aTargetPath);
         aTargetPath=getCanonicalPath(aTargetPath);
         if (aTargetPath.empty())
 return 1;
-        DRIVER_OUTPUT("aTargetPath(CanonicalPath) = ", aTargetPath);
         std::string aReplacePath = makeRenamePath(aTargetPath);
         CheckResult cr=CheckTheolizer(aTargetPath);
         std::error_code ec;
@@ -503,28 +498,6 @@ std::vector<std::string> GetCompilerInfo
 }
 
 // ***************************************************************************
-//      ログ出力指定判定
-// ***************************************************************************
-
-void setupDebugLog()
-{
-    // 設定ファイルのパス生成
-    std::string aSetupFilePath(TemporaryDir::get()); 
-    aSetupFilePath.append(kTheolizerSetupFile);
-
-    std::ifstream   ifs(aSetupFilePath);
-    if (ifs)
-    {
-        ENABLE_OUTPUT(KIND(Time)|KIND(Driver)|KIND(Parameter)|KIND(AstAnalyze));
-        ifs >> gAutoDeleteSec;
-    }
-    else
-    {
-        DISABLE_OUTPUT();
-    }
-}
-
-// ***************************************************************************
 //      元コンパイラ・パラメータ判定
 //          iArgv+2がkTheolizerOrigCompParamで始まっている時、true返却
 //              msvc  :/Dtheolizer_original_compiler=<元コンパイラのパス>
@@ -558,52 +531,7 @@ int main(int iArgc, const char **iArgv)
 {
     gExclusiveControl.reset(new ExclusiveControl(kTheolizerFileLock));
 
-    setupDebugLog();
-
-    struct Auto
-    {
-        Auto()
-        {
-            PARAMETER_OUTPUT("Theolizer Driver : Start -----------------------------------");
-        }
-        ~Auto()
-        {
-            PARAMETER_OUTPUT("Theolizer Driver : End   -----------------------------------");
-        }
-    } aAuto;
-
-    PARAMETER_OUTPUT("gAutoDeleteSec=", gAutoDeleteSec);
-    FineTimer   ft;
     int i;
-
-    char const* developer=::getenv("THEOLIZER_DEVELOPER_NAME");
-    if (developer)
-    {
-        gDeveloper=developer;
-    }
-
-    if (IS_PARAMETER_OUTPUT)
-    {
-        PARAMETER_OUTPUT("Theolizer Driver : Command line parameter");
-        char* aCurrentDir = GetCurrentDirName();
-        PARAMETER_OUTPUT("Current Dir : ", aCurrentDir);
-        free(aCurrentDir);
-        for (i=0; i < iArgc; ++i)
-        {
-            std::stringstream ss;
-            ss << "    iArgv[" << i << "] = ";
-            if (iArgv[i] == nullptr)
-            {
-                ss << "<nullptr>";
-            }
-            else
-            {
-                ss << "\"" << iArgv[i] << "\"";
-            }
-            PARAMETER_OUTPUT(ss.str());
-        }
-        PARAMETER_OUTPUT("THEOLIZER_DEVELOPER_NAME : ", gDeveloper);
-    }
 
 //----------------------------------------------------------------------------
 //      自exeパス名操作
@@ -612,11 +540,9 @@ int main(int iArgc, const char **iArgv)
     // 自モジュールのパスを自exeのフル・パスとする
     void *aFuncPtr = (void*)(intptr_t)main;
     std::string aExePath = llvmS::fs::getMainExecutable(iArgv[0], &aFuncPtr);
-    DRIVER_OUTPUT("aExePath                = ", aExePath);
     aExePath=getCanonicalPath(aExePath);
     if (aExePath.empty())
 return 1;
-    DRIVER_OUTPUT("aExePath(CanonicalPath) = ", aExePath);
 
 //----------------------------------------------------------------------------
 //      パラメータ取り出し
@@ -688,7 +614,6 @@ return 1;
         {
             aDefining=false;
 
-            PARAMETER_OUTPUT("aDoProcess");
             aDoProcess=true;
     continue;
         }
@@ -706,9 +631,7 @@ return 1;
             }
 
             aOriginalPath=aCurrent.second;
-            DRIVER_OUTPUT("aOriginalPath                = ", aOriginalPath);
             aOriginalPath=getCanonicalPath(aOriginalPath);
-            DRIVER_OUTPUT("aOriginalPath(CanonicalPath) = ", aOriginalPath);
             aDriverMode = getDriverMode(llvmS::path::stem(aOriginalPath));
     continue;
         }
@@ -753,22 +676,17 @@ return TheolizerProc(aExePath, arg);
 return 1;
     }
 #endif
-    DRIVER_OUTPUT("aOriginalPath = ", aOriginalPath);
 
 //----------------------------------------------------------------------------
 //      Theolizer解析実行判定
 //----------------------------------------------------------------------------
 
-    if (!aDoProcess)
-    {
-        DRIVER_OUTPUT("##### Pass through mode. #####");
-    }
-    else
+    if (aDoProcess)
     {
         // ライセンス表示
         if ((aDriverMode != gpp) || (aIsVersion) || (aIsOptionv))
         {
-            llvm::outs() << theolizer::getVersionString() << "\n";
+            llvm::outs() << getVersionString() << "\n";
             llvm::outs() << "\n";
             llvm::outs().flush();
         }
@@ -851,19 +769,8 @@ return 1;
                 aArgv.push_back(aTarget.c_str());
             }
 
-            PARAMETER_OUTPUT("BuildCompilation");
-            i=0;
-            for(auto arg : aArgv )
-            {
-                if (arg != nullptr) PARAMETER_OUTPUT("    aArgv[", i, "] = ", arg);
-                i++;
-            }
-            TIME_OUTPUT("pre  BuildCompilation() time=, ", ft.GetmSec(false), ", mSec");
-
             // Jobs分解する
             std::unique_ptr<clangD::Compilation> compilation(TheDriver.BuildCompilation(aArgv));
-            TIME_OUTPUT("post BuildCompilation() time=, ", ft.GetmSec(false), ", mSec");
-            FineTimer   ft2;
 
             if (aIsVersion)
             {
@@ -887,8 +794,6 @@ return 1;
                 if (!command)
             continue;
 
-                DRIVER_OUTPUT("job[", i, "] : ", command->getExecutable());
-
                 // Theolizer Driver以外なら非対象
                 if (aExePath != command->getExecutable())
             continue;
@@ -911,16 +816,7 @@ return 1;
                 }
                 while(gExclusiveControl->getRedoRequest() || gRetryAST);
                 if (ret) aRet=ret;
-
-                if (IS_TIME_OUTPUT)
-                {
-                    TIME_OUTPUT(*(args.end() - 1),
-                                " : parse time=,, ", ft2.GetmSec(), ", mSec");
-                }
             }
-
-            TIME_OUTPUT("AST analysis(included modifying source) time=, ",
-                        ft.GetmSec(), ", mSec");
         }
         if (aRet)
 return aRet;
@@ -975,14 +871,6 @@ return aRet;
     // 番兵
     aArgvForCall.push_back(nullptr);
 
-    PARAMETER_OUTPUT("----- Calling original compiler -----");
-    for (i=0; aArgvForCall[i] != nullptr; ++i)
-    {
-        PARAMETER_OUTPUT("    aArgvForCall[", i, "] = ", aArgvForCall[i]);
-    }
-
-    char* aCurrentDir = GetCurrentDirName();
-    PARAMETER_OUTPUT("Current Dir : ", aCurrentDir);
     std::string error_essage;
     bool execution_failed;
 
@@ -994,11 +882,8 @@ return aRet;
                                     nullptr, 0, 0, &error_essage,
                                     &execution_failed);
     }
-    TIME_OUTPUT("Compile time=, ", ft.GetmSec(), ", mSec");
 
     llvm::llvm_shutdown();
-
-    PARAMETER_OUTPUT("ret=", ret);
 
     return ret;
 }

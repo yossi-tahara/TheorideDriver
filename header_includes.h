@@ -134,16 +134,6 @@ THEOLIZER_INTERNAL_DISABLE_WARNING()
 #endif
 
 //----------------------------------------------------------------------------
-//      theolizer
-//----------------------------------------------------------------------------
-
-#include "base.h"
-
-#if 0
-#include <theolizer/test_tool.h>    // getFileList()
-#endif
-
-//----------------------------------------------------------------------------
 //      頻繁に使う名称を短縮する
 //          当該名称の調査を容易にするため、namespace指令を使わないこと。
 //----------------------------------------------------------------------------
@@ -222,6 +212,6 @@ namespace clangD=clang::driver;
 namespace boostI=boost::interprocess;
 namespace boostF=boost::filesystem;
 
-using theolizer::internal::FineTimer;
+//using theolizer::internal::FineTimer;
 
 #endif
