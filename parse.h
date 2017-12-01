@@ -111,7 +111,10 @@ public:
 //      関数処理
 //          GenerationMarkerStart(), GenerationMarkerEnd()の位置を取り出す。
 //----------------------------------------------------------------------------
-    virtual bool VisitFunctionDecl(clang::FunctionDecl* iFunctionDecl)
+
+//      ---<<< 文字列獲得 >>>---
+
+    std::string pullupString(clang::Expr* iExpr)
     {
         // StmtClass名テーブル
         constexpr static char const* StmtClassTable[]=
@@ -123,8 +126,57 @@ public:
             nullptr
         };
 
+llvm::outs() << "pullupString()--------------\n";
+llvm::outs().flush();
 
+llvm::outs() << "    iExpr->getStmtClass()=" << iExpr->getStmtClass()
+             << " (" << StmtClassTable[iExpr->getStmtClass()] << ")\n";
 
+        switch(iExpr->getStmtClass())
+        {
+        case clang::Stmt::ImplicitCastExprClass:
+            {
+                clang::ImplicitCastExpr* ice = static_cast<clang::ImplicitCastExpr*>(iExpr);
+                clang::Expr* aSubExpr = ice->getSubExpr();
+    return pullupString(aSubExpr);
+            }
+
+        case clang::Stmt::StringLiteralClass:
+            {
+                StringRef aString = static_cast<clang::StringLiteral*>(iExpr)->getString();
+    return aString.str();
+            }
+
+        case clang::Stmt::DeclRefExprClass:
+            {
+                clang::ValueDecl* vd =
+                    static_cast<clang::DeclRefExpr*>(iExpr)->getDecl();
+llvm::outs() << "    vd=" << vd << "\n";
+                if (!vd)
+    return "";
+                clang::VarDecl* var = dyn_cast<clang::VarDecl>(vd);
+llvm::outs() << "    var=" << var << "\n";
+                if (!var)
+    return "";
+llvm::outs().flush();
+var->dump();
+
+                clang::Expr* init = var->getInit();
+llvm::outs() << "    init=" << init << "\n";
+                if (!init)
+    return "";
+
+    return pullupString(init);
+            }
+        }
+
+        return "";
+    }
+
+//      ---<<< 本体 >>>---
+
+    virtual bool VisitFunctionDecl(clang::FunctionDecl* iFunctionDecl)
+    {
         if (!iFunctionDecl->getIdentifier())
     return true;
 
@@ -186,7 +238,27 @@ llvm::outs().flush();
                     << qt.getAsString();
     return true;
             }
+
+
+#if 1
+aParam->dump();
             clang::Expr* aDefault = aParam->getDefaultArg();
+            if (aDefault == nullptr)
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() second parameter has default.(inc-file path)");
+    return true;
+            }
+            std::string aString = pullupString(aDefault);
+llvm::outs() << "    aString=" << aString << "\n";
+llvm::outs().flush();
+            if (aString.empty())
+            {
+                gCustomDiag.ErrorReport(aParam->getLocation(),
+                    "GenerationMarkerStart() unknown error.");
+    return true;
+            }
+#else
             if (aDefault == nullptr)
             {
                 gCustomDiag.ErrorReport(aParam->getLocation(),
@@ -197,26 +269,37 @@ llvm::outs() << "    aDefault->getStmtClass()=" << aDefault->getStmtClass()
              << " (" << StmtClassTable[aDefault->getStmtClass()] << ")\n";
             if (aDefault->getStmtClass() != clang::Stmt::ImplicitCastExprClass)
             {
-                gCustomDiag.ErrorReport(aParam->getLocation(),
-                    "GenerationMarkerStart() unknown error.(ImplicitCastExpr)");
-    return true;
             }
             clang::ImplicitCastExpr* ice = static_cast<clang::ImplicitCastExpr*>(aDefault);
-            clang::Expr* aStringExpr = ice->getSubExpr();
+            clang::Expr* aSubExpr = ice->getSubExpr();
 
-llvm::outs() << "    aStringExpr->getStmtClass()=" << aStringExpr->getStmtClass()
-             << " (" << StmtClassTable[aStringExpr->getStmtClass()] << ")\n";
+llvm::outs() << "    aSubExpr->getStmtClass()=" << aSubExpr->getStmtClass()
+             << " (" << StmtClassTable[aSubExpr->getStmtClass()] << ")\n";
 llvm::outs() << "    StringLiteralClass=" << clang::Stmt::StringLiteralClass << "\n";
-            if (aStringExpr->getStmtClass() != clang::Stmt::StringLiteralClass)
+
+            std::string aIncPath;
+            if (aSubExpr->getStmtClass() == clang::Stmt::StringLiteralClass)
+            {
+                StringRef aString = static_cast<clang::StringLiteral*>(aSubExpr)->getString();
+                aIncPath = aString.str();
+            }
+            else if (aSubExpr->getStmtClass() == clang::Stmt::DeclRefExprClass)
+            {
+                clang::ValueDecl* vd =
+                    static_cast<clang::DeclRefExpr*>(aSubExpr)->getDecl();
+vd->dump();
+            }
+            else
             {
                 gCustomDiag.ErrorReport(aParam->getLocation(),
                     "GenerationMarkerStart() unknown error.(StringLiteral)");
     return true;
             }
-            StringRef aString = static_cast<clang::StringLiteral*>(aStringExpr)->getString();
-llvm::outs() << "    aString=" << aString.str() << "\n";
+llvm::outs() << "    aIncPath=" << aIncPath << "\n";
 llvm::outs().flush();
 aParam->dump();
+#endif
+
         }
 
         // 対象の型取り出し
