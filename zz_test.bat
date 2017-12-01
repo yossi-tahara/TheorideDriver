@@ -2,6 +2,7 @@ call "N:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary
 
 cd build
 cmake --build . --config Release
-ctest -C Release -V
-
+if %ERRORLEVEL% == 0 (
+    ctest -C Release -V
+)
 pause

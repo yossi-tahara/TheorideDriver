@@ -139,7 +139,7 @@ link_directories("${LLVM_LIBRARY_DIRS}")
 
 #       ---<<< TheolizerDriver >>>---
 
-add_executable(TheolizerDriver EXCLUDE_FROM_ALL ${THEOLIZER_DRIVER_LIST})
+add_executable(TheolizerDriver ${THEOLIZER_DRIVER_LIST})
 #set_target_properties(TheolizerDriver PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE)
 
 target_link_libraries(TheolizerDriver ${Boost_LIBRARIES})
@@ -211,6 +211,9 @@ enable_testing()
 
 set(ORIGINAL_COMPILER "${CMAKE_CXX_COMPILER}")
 add_test(NAME TheolizerDriver
-    COMMAND $<TARGET_FILE:TheolizerDriver> -Dtheolizer_original_compiler=${ORIGINAL_COMPILER} test.c
+    COMMAND $<TARGET_FILE:TheolizerDriver>
+        -Dtheolizer_original_compiler=${ORIGINAL_COMPILER}
+        -DTHEOLIZER_DO_PROCESS
+        test.c
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"
 )
