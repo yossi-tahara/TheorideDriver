@@ -95,24 +95,14 @@ public:
     {
         if (iCXXRecordDecl->isThisDeclarationADefinition())
         {
-#if 0
-            for (auto decl : iCXXRecordDecl->decls())
-            {
-                Visit(decl);
-            }
-#else
             enumerateDecl(iCXXRecordDecl, mSearchEnd);
-#endif
         }
         return true;
     }
 
 //----------------------------------------------------------------------------
-//      関数処理
-//          GenerationMarkerStart(), GenerationMarkerEnd()の位置を取り出す。
+//      文字列リテラル獲得
 //----------------------------------------------------------------------------
-
-//      ---<<< 文字列獲得 >>>---
 
     std::string pullupString(clang::Expr* iExpr)
     {
@@ -125,12 +115,6 @@ public:
             #include "clang/AST/StmtNodes.inc"
             nullptr
         };
-
-llvm::outs() << "pullupString()--------------\n";
-llvm::outs().flush();
-
-llvm::outs() << "    iExpr->getStmtClass()=" << iExpr->getStmtClass()
-             << " (" << StmtClassTable[iExpr->getStmtClass()] << ")\n";
 
         switch(iExpr->getStmtClass())
         {
@@ -151,18 +135,13 @@ llvm::outs() << "    iExpr->getStmtClass()=" << iExpr->getStmtClass()
             {
                 clang::ValueDecl* vd =
                     static_cast<clang::DeclRefExpr*>(iExpr)->getDecl();
-llvm::outs() << "    vd=" << vd << "\n";
                 if (!vd)
     return "";
                 clang::VarDecl* var = dyn_cast<clang::VarDecl>(vd);
-llvm::outs() << "    var=" << var << "\n";
                 if (!var)
     return "";
-llvm::outs().flush();
-var->dump();
 
                 clang::Expr* init = var->getInit();
-llvm::outs() << "    init=" << init << "\n";
                 if (!init)
     return "";
 
@@ -173,7 +152,10 @@ llvm::outs() << "    init=" << init << "\n";
         return "";
     }
 
-//      ---<<< 本体 >>>---
+//----------------------------------------------------------------------------
+//      関数処理
+//          GenerationMarkerStart(), GenerationMarkerEnd()の位置を取り出す。
+//----------------------------------------------------------------------------
 
     virtual bool VisitFunctionDecl(clang::FunctionDecl* iFunctionDecl)
     {
@@ -184,15 +166,30 @@ llvm::outs() << "    init=" << init << "\n";
     return true;
 
         llvm::outs() << iFunctionDecl->getNameAsString() << "\n";
-llvm::outs().flush();
 
-//      ---<<< パラメータ取り出し >>>---
+//      ---<<< 処理対象判定 >>>---
+
+        // GenerationMarkerStart()処理中
+        if (!mSearchEnd)
+        {
+            if (iFunctionDecl->getName() != "GenerationMarkerStart")
+    return true;
+
+            if (iFunctionDecl->param_size() != 2)
+            {
+                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
+                    "GenerationMarkerStart() has 2 parameters. Second is inc-file path.");
+    return true;
+            }
+        }
 
         // GenerationMarkerEnd()処理中
-        if (mSearchEnd)
+        else
         {
-            if ((iFunctionDecl->getName() == "GenerationMarkerEnd")
-             && (iFunctionDecl->param_size() != 1))
+            if (iFunctionDecl->getName() != "GenerationMarkerEnd")
+    return true;
+
+            if (iFunctionDecl->param_size() != 1)
             {
                 gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
                     "Do not modify the source generated.");
@@ -200,37 +197,25 @@ llvm::outs().flush();
             }
         }
 
-        // GenerationMarkerStart()処理中
-        else
-        {
-            if ((iFunctionDecl->getName() == "GenerationMarkerStart")
-             && (iFunctionDecl->param_size() != 2))
-            {
-                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
-                    "GenerationMarkerStart() has 2 parameters. Second is inc-file path.");
-    return true;
-            }
+//      ---<<< 第2パラメータのデフォルト値取り出し >>>---
 
+        std::string aString;
+        if (!mSearchEnd)
+        {
             // 第2パラメータがchar const*であることをチェック
             bool aIsCharConstPointer = false;
             clang::ParmVarDecl* aParam=iFunctionDecl->getParamDecl(1);
             QualType qt = aParam->getType();
-llvm::outs() << "GenerationMarkerStart( ," << qt.getAsString() << ")\n";
-llvm::outs() << "    " << qt->isPointerType() << "\n";
 
             clang::PointerType const* pt = qt->getAs<clang::PointerType>();
             if (pt)
             {
                 QualType pointee = pt->getPointeeType();
-llvm::outs() << "    " << pointee.getAsString() << "\n";
-llvm::outs() << "    " << pointee.isConstQualified() << ", " << pointee->isCharType() << "\n";
                 if (pointee.isConstQualified() && pointee->isCharType())
                 {
                     aIsCharConstPointer = true;
-llvm::outs() << "    OK!!\n";
                 }
             }
-llvm::outs().flush();
             if (!aIsCharConstPointer)
             {
                 gCustomDiag.ErrorReport(aParam->getLocation(),
@@ -239,9 +224,7 @@ llvm::outs().flush();
     return true;
             }
 
-
-#if 1
-aParam->dump();
+            // 第2パラメータのデフォルト値を取り出す
             clang::Expr* aDefault = aParam->getDefaultArg();
             if (aDefault == nullptr)
             {
@@ -249,7 +232,8 @@ aParam->dump();
                     "GenerationMarkerStart() second parameter has default.(inc-file path)");
     return true;
             }
-            std::string aString = pullupString(aDefault);
+
+            aString = pullupString(aDefault);
 llvm::outs() << "    aString=" << aString << "\n";
 llvm::outs().flush();
             if (aString.empty())
@@ -258,95 +242,102 @@ llvm::outs().flush();
                     "GenerationMarkerStart() unknown error.");
     return true;
             }
-#else
-            if (aDefault == nullptr)
-            {
-                gCustomDiag.ErrorReport(aParam->getLocation(),
-                    "GenerationMarkerStart() second parameter has default.(inc-file path)");
-    return true;
-            }
-llvm::outs() << "    aDefault->getStmtClass()=" << aDefault->getStmtClass()
-             << " (" << StmtClassTable[aDefault->getStmtClass()] << ")\n";
-            if (aDefault->getStmtClass() != clang::Stmt::ImplicitCastExprClass)
-            {
-            }
-            clang::ImplicitCastExpr* ice = static_cast<clang::ImplicitCastExpr*>(aDefault);
-            clang::Expr* aSubExpr = ice->getSubExpr();
-
-llvm::outs() << "    aSubExpr->getStmtClass()=" << aSubExpr->getStmtClass()
-             << " (" << StmtClassTable[aSubExpr->getStmtClass()] << ")\n";
-llvm::outs() << "    StringLiteralClass=" << clang::Stmt::StringLiteralClass << "\n";
-
-            std::string aIncPath;
-            if (aSubExpr->getStmtClass() == clang::Stmt::StringLiteralClass)
-            {
-                StringRef aString = static_cast<clang::StringLiteral*>(aSubExpr)->getString();
-                aIncPath = aString.str();
-            }
-            else if (aSubExpr->getStmtClass() == clang::Stmt::DeclRefExprClass)
-            {
-                clang::ValueDecl* vd =
-                    static_cast<clang::DeclRefExpr*>(aSubExpr)->getDecl();
-vd->dump();
-            }
-            else
-            {
-                gCustomDiag.ErrorReport(aParam->getLocation(),
-                    "GenerationMarkerStart() unknown error.(StringLiteral)");
-    return true;
-            }
-llvm::outs() << "    aIncPath=" << aIncPath << "\n";
-llvm::outs().flush();
-aParam->dump();
-#endif
-
         }
 
-        // 対象の型取り出し
+//      ---<<< 第1パラメータの取り出し >>>---
+
+        // 先頭パラメータの型取得
         clang::ParmVarDecl* aParam=iFunctionDecl->getParamDecl(0);
         QualType qt = aParam->getType();
+
+//      ---<<< Startは重複チェックとコード生成／Endは位置登録 >>>---
+
         switch (qt->getTypeClass())
         {
         case Type::Enum:
             {
 llvm::outs() << "enum : " << qt.getAsString() << "\n";
 llvm::outs().flush();
+
+                // Decl*取り出し
                 EnumType const* et = qt->getAs<EnumType>();
                 ERROR(!et, iFunctionDecl, true);
-
                 EnumDecl* aTargetEnum = et->getDecl();
                 ERROR(!aTargetEnum, iFunctionDecl, true);
-                if (mSearchEnd)
+
+                // 処理
+                if (!mSearchEnd)
                 {
-                    mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation());
+                    if (!aTargetEnum->isThisDeclarationADefinition())
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerStart() needs enum definition.");
+    return true;
+                    }
+
+                    if (!mAstInterface.addStartMarker(aTargetEnum, iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerStart() multiple definition(%0).") <<qt.getAsString();
+    return true;
+                    }
+
+                    // ソース生成
+
                 }
                 else
                 {
+                    if (!mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
+    return true;
+                    }
                 }
             }
             break;
 
         case Type::Record:
+            {
 llvm::outs() << "class : " << qt.getAsString() << "\n";
 llvm::outs().flush();
+
+                // Decl*取り出し
+                CXXRecordDecl* aCXXRecordDecl=qt->getAsCXXRecordDecl();
+                ERROR(!aCXXRecordDecl, iFunctionDecl, true);
+
+                // 処理
+                if (!mSearchEnd)
+                {
+                    if (!aCXXRecordDecl->isThisDeclarationADefinition())
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerStart() needs class/struct definition.");
+    return true;
+                    }
+
+                    if (!mAstInterface.addStartMarker(aCXXRecordDecl,iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerStart() multiple definition(%0).") <<qt.getAsString();
+    return true;
+                    }
+
+                    // ソース生成
+
+                }
+                else
+                {
+                    if (!mAstInterface.addEndMarker(aCXXRecordDecl, iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
+    return true;
+                    }
+                }
+            }
             break;
         }
-
-#if 0
-
-//      ---<<< 自動生成位置記録 >>>---
-
-FullSourceLoc loc = gASTContext->getFullLoc(iFunctionDecl->getLocStart());
-ASTANALYZE_OUTPUT("    TheorideMarker(",
-                  wUniqueClass->getQualifiedNameAsString(), ") : ",
-                  loc.printToString(*gSourceManager));
-ASTANALYZE_OUTPUT("    wUniqueClass=", wUniqueClass);
-        mAstOutput.mGeneratingLocations.emplace
-        (
-            wUniqueClass,
-            iFunctionDecl
-        );
-#endif
         return true;
     }
 

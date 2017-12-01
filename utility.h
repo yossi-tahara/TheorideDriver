@@ -587,13 +587,24 @@ struct AstInterface
 
     bool    mNotParse;      // 解析処理を行わない時true THEOLIZER_NO_ANALYZE
 
-//      ---<<< 定義終了位置 >>>---
+//      ---<<< 多重定義チェック >>>---
 
-    std::map<clang::TagDecl*, FullSourceLoc>    mEndMarkerList;
-    void addEndMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
+    std::map<clang::TagDecl*, FullSourceLoc>    mStartMarkerList;
+    bool addStartMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
     {
         FullSourceLoc aLoc = gASTContext->getFullLoc(iLoc).getSpellingLoc();
-        mEndMarkerList.emplace(iTagDecl, aLoc);
+        auto ret = mStartMarkerList.emplace(iTagDecl, aLoc);
+        return ret.second;
+    }
+
+//      ---<<< 自動生成終了位置 >>>---
+
+    std::map<clang::TagDecl*, FullSourceLoc>    mEndMarkerList;
+    bool addEndMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
+    {
+        FullSourceLoc aLoc = gASTContext->getFullLoc(iLoc).getSpellingLoc();
+        auto ret = mEndMarkerList.emplace(iTagDecl, aLoc);
+        return ret.second;
     }
 
 //      ---<<< コンストラクタ >>>---
