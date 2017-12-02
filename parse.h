@@ -1,24 +1,13 @@
 ﻿//############################################################################
 //      AST解析
 /*
-    © 2016 Theoride Technology (http://theolizer.com/) All Rights Reserved.
-    "Theolizer" is a registered trademark of Theoride Technology.
-
-    "Theolizer" License
-        In the case where you are in possession of a valid “Theolizer” License,
-        you may use this file in accordance with the terms and conditions of 
-        the use license determined by Theoride Technology.
+    © 2017 Theoride Technology (http://theolizer.com/) All Rights Reserved.
 
     General Public License Version 3 ("GPLv3")
         You may use this file in accordance with the terms and conditions of 
         GPLv3 published by Free Software Foundation.
         Please confirm the contents of GPLv3 at https://www.gnu.org/licenses/gpl.txt .
         A copy of GPLv3 is also saved in a LICENSE.TXT file.
-
-    商用ライセンス
-        あなたが有効なTheolizer商用ライセンスを保持している場合、
-        セオライド テクノロジーの定める使用許諾書の条件に従って、
-        このファイルを取り扱うことができます。
 
     General Public License Version 3(以下GPLv3)
         Free Software Foundationが公表するGPLv3の使用条件に従って、
@@ -28,8 +17,8 @@
 */
 //############################################################################
 
-#if !defined(THEOLIZER_PARSE_H)
-#define THEOLIZER_PARSE_H
+#if !defined(THEORIDE_PARSE_H)
+#define THEORIDE_PARSE_H
 
 // ***************************************************************************
 //      デバッグ用グローバル変数
@@ -61,7 +50,7 @@ private:
         StringRef aMacroName=StringRef(iMacroNameTok.getIdentifierInfo()->getNameStart());
 
         // 解析しない
-        if (aMacroName.equals("THEOLIZER_NO_ANALYZE"))
+        if (aMacroName.equals("THEORIDE_NO_ANALYZE"))
         {
             mAstInterface.mNotParse=true;
         }
@@ -78,16 +67,7 @@ public:
 
 //----------------------------------------------------------------------------
 //      class/structの処理
-//          enumは非侵入型処理なので、structで実装されることになる。
-//          2015/05/14現在enumは非対応。
-//
-//          2016/01/06
-//          TheolizerVersion<>も直接呼ばれる。
-//              恐らく、クラス外定義しているから呼ばれると思う。
-//          また、TheolizerVersion<>のdecls()に再度TheolizerVersion<>が現れる。
-//              こちらはgetQualifiedNameAsString()でテンプレート・パラメータも
-//              含まれる。取り除く方法がないか幾つかトライしたが失敗。
-//          入口でTheolizerVersion<>判定して処理する。
+//          メソッドとしてのGenerationMarker*処理のため
 //----------------------------------------------------------------------------
 
 public:
@@ -422,7 +402,7 @@ public:
 //          AST解析を実行するかどうか判定する
 // ***************************************************************************
 
-class TheolizerASTConsumer : public ASTConsumer
+class TheorideASTConsumer : public ASTConsumer
 {
 private:
 
@@ -467,7 +447,7 @@ private:
     bool                mMadeDefaultSource; // デフォルトの自動生成ソースを作成した
 
 public:
-    explicit TheolizerASTConsumer(CompilerInstance *iCompilerInstance) :
+    explicit TheorideASTConsumer(CompilerInstance *iCompilerInstance) :
                     mPreprocessor(iCompilerInstance->getPreprocessor()),
                     mASTVisitor(mAstInterface),
                     mMadeDefaultSource(false)
@@ -482,7 +462,7 @@ public:
         mPreprocessor.addPPCallbacks(std::unique_ptr<PPCallbacksTracker>(
             new PPCallbacksTracker(mAstInterface)));
     }
-    ~TheolizerASTConsumer()
+    ~TheorideASTConsumer()
     {
         gCustomDiag.resetDiagnosticsEngine();
     }
@@ -492,13 +472,13 @@ public:
 //      メイン処理からの中継
 //----------------------------------------------------------------------------
 
-class TheolizerFrontendAction : public SyntaxOnlyAction /*ASTFrontendAction*/
+class TheorideFrontendAction : public SyntaxOnlyAction /*ASTFrontendAction*/
 {
 public:
     virtual std::unique_ptr<ASTConsumer> CreateASTConsumer(
                         CompilerInstance &iCompilerInstance, StringRef file)
     {
-        return llvm::make_unique<TheolizerASTConsumer>(&iCompilerInstance); 
+        return llvm::make_unique<TheorideASTConsumer>(&iCompilerInstance); 
     }
 };
 
@@ -563,7 +543,7 @@ return skip_list[i].skip_num;
 //      AST解析メイン処理
 // ***************************************************************************
 
-static llvm::cl::OptionCategory MyToolCategory("Theolizer Driver");
+static llvm::cl::OptionCategory MyToolCategory("Theoride Driver");
 int parse
 (
     std::string const&              iExecPath,
@@ -682,9 +662,9 @@ return 0;
     clang::tooling::CommonOptionsParser op(argc, argv, MyToolCategory);
     clang::tooling::ClangTool Tool(op.getCompilations(), aSourceList);
     IntrusiveRefCntPtr<DiagnosticOptions>   diag_opts = new DiagnosticOptions;
-    TheolizerDiagnosticConsumer    DiagClient(llvm::errs(), &*diag_opts);
+    TheorideDiagnosticConsumer    DiagClient(llvm::errs(), &*diag_opts);
     Tool.setDiagnosticConsumer(&DiagClient);
-    int ret=Tool.run(clang::tooling::newFrontendActionFactory<TheolizerFrontendAction>().get());
+    int ret=Tool.run(clang::tooling::newFrontendActionFactory<TheorideFrontendAction>().get());
 
     return ret;
 }

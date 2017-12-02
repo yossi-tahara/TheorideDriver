@@ -1,24 +1,13 @@
 ﻿//############################################################################
 //      ユーティリティ／共有クラス定義
 /*
-    © 2016 Theoride Technology (http://theolizer.com/) All Rights Reserved.
-    "Theolizer" is a registered trademark of Theoride Technology.
-
-    "Theolizer" License
-        In the case where you are in possession of a valid “Theolizer” License,
-        you may use this file in accordance with the terms and conditions of 
-        the use license determined by Theoride Technology.
+    © 2017 Theoride Technology (http://theolizer.com/) All Rights Reserved.
 
     General Public License Version 3 ("GPLv3")
         You may use this file in accordance with the terms and conditions of 
         GPLv3 published by Free Software Foundation.
         Please confirm the contents of GPLv3 at https://www.gnu.org/licenses/gpl.txt .
         A copy of GPLv3 is also saved in a LICENSE.TXT file.
-
-    商用ライセンス
-        あなたが有効なTheolizer商用ライセンスを保持している場合、
-        セオライド テクノロジーの定める使用許諾書の条件に従って、
-        このファイルを取り扱うことができます。
 
     General Public License Version 3(以下GPLv3)
         Free Software Foundationが公表するGPLv3の使用条件に従って、
@@ -28,8 +17,8 @@
 */
 //############################################################################
 
-#if !defined(THEOLIZER_UTILITY_H)
-#define THEOLIZER_UTILITY_H
+#if !defined(THEORIDE_UTILITY_H)
+#define THEORIDE_UTILITY_H
 
 // ***************************************************************************
 //      重要定義
@@ -41,25 +30,25 @@
 //      各種定義
 //----------------------------------------------------------------------------
 
-// TheolizerDriver.exe判定用文字列
-char const* kTheolizerMarker = "Theolizer";
+// TheorideDriver.exe判定用文字列
+char const* kTheorideMarker = "Theoride";
 
-// TheolizerDriver専用パラメータ
-char const* kTheolizerOrigCompParam = "theolizer_original_compiler";// =<OrigPath>
-char const* kTheolizerDoProcessParam= "THEOLIZER_DO_PROCESS";       // none
+// TheorideDriver専用パラメータ
+char const* kTheorideOrigCompParam = "theoride_original_compiler";// =<OrigPath>
+char const* kTheorideDoProcessParam= "THEORIDE_DO_PROCESS";       // none
 
-#define ARG_THEOLIZER   "--theolizer"                           // 継続パラメータ
-char const* kTheolizerVersionParam  = ARG_THEOLIZER "-version"; // none
+#define ARG_THEORIDE   "--theoride"                           // 継続パラメータ
+char const* kTheorideVersionParam  = ARG_THEORIDE "-version"; // none
 #ifndef DISABLE_REPLACE
-char const* kTheolizerReplaceParam  = ARG_THEOLIZER "-replace"; // =<Path>;<Path>;...
-char const* kTheolizerRestoreParam  = ARG_THEOLIZER "-restore"; // =<Path>;<Path>;...
+char const* kTheorideReplaceParam  = ARG_THEORIDE "-replace"; // =<Path>;<Path>;...
+char const* kTheorideRestoreParam  = ARG_THEORIDE "-restore"; // =<Path>;<Path>;...
 #endif
 
 // エラー出力ヘッダ
-char const*  kDiagMarker = "[" "Theolizer" "] ";
+char const*  kDiagMarker = "[" "Theoride" "] ";
 
 // 排他制御用リソース名
-char const* kTheolizerFileLock = "file_lock";
+char const* kTheorideFileLock = "file_lock";
 
 //############################################################################
 //      コンパイラの相違点を吸収する
@@ -145,7 +134,7 @@ private:
         SmallString<128>    temp_dir;
         llvmS::path::system_temp_directory(true, temp_dir);
         mTemporaryDir = temp_dir;
-        mTemporaryDir += "/theolizer/";
+        mTemporaryDir += "/theoride/";
 
         // テンポラリ・フォルダの生成
         std::string aTemporaryDir(mTemporaryDir.begin());
@@ -197,7 +186,7 @@ struct AutoFalse
 // ***************************************************************************
 //      ソース保存排他制御オブジェクト
 //          ミューテックスと各フラグはアトミックに設定する必要があるが、
-//          Theolizerドライバーはシングル・スレッドなのでアトミック化を省略。
+//          Theorideドライバーはシングル・スレッドなのでアトミック化を省略。
 // ***************************************************************************
 
 class ExclusiveControl
@@ -373,14 +362,14 @@ public:
 extern ASTContext*  gASTContext;
 std::string         gLastErrorMessage;
 
-class TheolizerDiagnosticConsumer : public clang::TextDiagnosticPrinter
+class TheorideDiagnosticConsumer : public clang::TextDiagnosticPrinter
 {
 private:
     bool                    mHasErrorOccurred;
     SmallVector<char, 128>  mMessage;
 
 public:
-    TheolizerDiagnosticConsumer(clang::raw_ostream &iOStream, clang::DiagnosticOptions *iDiagOpt) :
+    TheorideDiagnosticConsumer(clang::raw_ostream &iOStream, clang::DiagnosticOptions *iDiagOpt) :
         TextDiagnosticPrinter(iOStream, iDiagOpt),
         mHasErrorOccurred(false)
     { }
@@ -411,7 +400,7 @@ public:
             gLastErrorMessage=aMessage + "\n" + aLocation;
         }
 
-        // 致命的エラーやTheolizerエラーを反映する
+        // 致命的エラーやTheorideエラーを反映する
         if ((iDiagLevel == clang::DiagnosticsEngine::Level::Fatal)
          || (StringRef(aMessage).startswith(kDiagMarker)))
         {
@@ -445,7 +434,7 @@ private:
         mBuff.append(iFormat);
         return mBuff.c_str();
     }
-    TheolizerDiagnosticConsumer*        mClient;
+    TheorideDiagnosticConsumer*        mClient;
     std::unique_ptr<DiagnosticConsumer> mClientBackup;
 
 public:
@@ -456,7 +445,7 @@ public:
     {
 
         mDiags = iDiags;
-        mClient= static_cast<TheolizerDiagnosticConsumer*>(mDiags->getClient());
+        mClient= static_cast<TheorideDiagnosticConsumer*>(mDiags->getClient());
         DRIVER_ASSERT(mClient, "");
         mClient->clear();
     }
@@ -500,9 +489,9 @@ public:
 //      ---<<< 複数箇所で用いるメッセージの定義 >>>---
 
     static inline char const*   getNotSupportUnicon()
-        { return "theolizer does not support union.";}
+        { return "theoride does not support union.";}
     static inline char const*   getNotSupportNoName()
-        { return "theolizer does not support no-named class/struct";}
+        { return "theoride does not support no-named class/struct";}
 };
 
 //----------------------------------------------------------------------------
@@ -519,7 +508,7 @@ CustomDiag              gCustomDiag;
     do {                                                                    \
         if (dCond) {                                                        \
             gCustomDiag.ErrorReport(dDecl->getLocation(),                   \
-                "Do not modify the source generated by Theolizer.(%0)")     \
+                "Do not modify the source generated by Theoride.(%0)")      \
             << __LINE__;                                                    \
     return __VA_ARGS__;                                                     \
         }                                                                   \
@@ -529,7 +518,7 @@ CustomDiag              gCustomDiag;
     do {                                                                    \
         if (dCond) {                                                        \
             gCustomDiag.ErrorReport(dStmt->getLocStart(),                   \
-                "Do not modify the source generated by Theolizer.(%0)")     \
+                "Do not modify the source generated by Theoride.(%0)")      \
             << __LINE__;                                                    \
     return __VA_ARGS__;                                                     \
         }                                                                   \
@@ -539,7 +528,7 @@ CustomDiag              gCustomDiag;
     do {                                                                    \
         if (dCond) {                                                        \
             gCustomDiag.ErrorReport(dLoc,                                   \
-                "Do not modify the source generated by Theolizer.(%0)")     \
+                "Do not modify the source generated by Theoride.(%0)")      \
             << __LINE__;                                                    \
     return __VA_ARGS__;                                                     \
         }                                                                   \
@@ -548,7 +537,7 @@ CustomDiag              gCustomDiag;
 #define WARNING(dCond, dDecl, ...)                                          \
     if (dCond) {                                                            \
         gCustomDiag.WarningReport(dDecl->getLocation(),                     \
-            "Theolizer unkown pattern. Please report to Theolizer developper.(%0)")\
+            "Theoride unkown pattern. Please report to Theoride developper.(%0)")\
         << __LINE__;                                                        \
     return __VA_ARGS__;                                                     \
     }                                                                       \
@@ -556,7 +545,7 @@ CustomDiag              gCustomDiag;
 #define WARNING_CONT(dCond, dDecl)                                          \
     if (dCond) {                                                            \
         gCustomDiag.WarningReport(dDecl->getLocation(),                     \
-            "Theolizer unkown pattern. Please report to Theolizer developper.(%0)")\
+            "Theoride unkown pattern. Please report to Theoride developper.(%0)")\
         << __LINE__;                                                        \
     continue;                                                               \
     }                                                                       \
@@ -564,14 +553,14 @@ CustomDiag              gCustomDiag;
 #define NOT_SUPPORT(dCond, dDecl, ...)                                      \
     if (dCond) {                                                            \
         gCustomDiag.WarningReport(dDecl->getLocation(),                     \
-            "Theolizer does not support pattern.");                         \
+            "Theoride does not support pattern.");                          \
     return __VA_ARGS__;                                                     \
     }                                                                       \
 
 #define NOT_SUPPORT_CONT(dCond, dDecl)                                      \
     if (dCond) {                                                            \
         gCustomDiag.WarningReport(dDecl->getLocation(),                     \
-            "Theolizer does not support pattern.");                         \
+            "Theoride does not support pattern.");                          \
     continue;                                                               \
     }                                                                       \
 
@@ -585,7 +574,7 @@ struct AstInterface
 //          first : #undef、second : #defineとする
 //          #define～#undefの間にあるキーを見つけるようにするため。
 
-    bool    mNotParse;      // 解析処理を行わない時true THEOLIZER_NO_ANALYZE
+    bool    mNotParse;      // 解析処理を行わない時true THEORIDE_NO_ANALYZE
 
 //      ---<<< 多重定義チェック >>>---
 
@@ -631,12 +620,12 @@ SourceManager*          gSourceManager=nullptr;
 // AST解析をリトライする
 //  バージョンアップを検出した時、最新版のマクロが未生成の状態でAST解析するため、
 //  旧バージョンのみで保存されているクラスのsave/loadが生成されない。
-//  その場合にTHEOLIZER_GENERATED_NO_COMPILEが付いてしまう問題に対処する
+//  その場合にTHEORIDE_GENERATED_NO_COMPILEが付いてしまう問題に対処する
 // 2016/09/12 これだけではダメだった。
 //  派生クラスからのみ保存されていた基底クラスがあり、
 //  それをバーションアップ時に派生クラスから解除した場合、
 //  save/load検出がうまく行っていない。
-//  暫定処置として、THEOLIZER_GENERATED_NO_COMPILEを付けないようにしている。
+//  暫定処置として、THEORIDE_GENERATED_NO_COMPILEを付けないようにしている。
 bool                    gRetryAST;
 
 //      ---<<< ソース・ファイルの排他制御 >>>---

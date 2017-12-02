@@ -1,5 +1,5 @@
 ﻿//############################################################################
-//      Theolizerドライバー
+//      Theorideドライバー
 //          ドライバーは、インクルードが非常に重いため、
 //          コンパイル単位を１つだけとする。
 //          当ファイルがコンパイル単位の中心である。
@@ -10,24 +10,13 @@
 //              AST解析-ソース修正呼び出し
 //              元のコンパイラ呼び出し
 /*
-    © 2016 Theoride Technology (http://theolizer.com/) All Rights Reserved.
-    "Theolizer" is a registered trademark of Theoride Technology.
-
-    "Theolizer" License
-        In the case where you are in possession of a valid “Theolizer” License,
-        you may use this file in accordance with the terms and conditions of 
-        the use license determined by Theoride Technology.
+    © 2017 Theoride Technology (http://theolizer.com/) All Rights Reserved.
 
     General Public License Version 3 ("GPLv3")
         You may use this file in accordance with the terms and conditions of 
         GPLv3 published by Free Software Foundation.
         Please confirm the contents of GPLv3 at https://www.gnu.org/licenses/gpl.txt .
         A copy of GPLv3 is also saved in a LICENSE.TXT file.
-
-    商用ライセンス
-        あなたが有効なTheolizer商用ライセンスを保持している場合、
-        セオライド テクノロジーの定める使用許諾書の条件に従って、
-        このファイルを取り扱うことができます。
 
     General Public License Version 3(以下GPLv3)
         Free Software Foundationが公表するGPLv3の使用条件に従って、
@@ -91,7 +80,7 @@ std::string makeRenamePath(std::string const& iExePath)
     std::string aRenamePath = llvmS::path::parent_path(iExePath);
     aRenamePath.append("/");
     aRenamePath.append(llvmS::path::stem(iExePath));
-    aRenamePath.append("RenamedByTheolizer");
+    aRenamePath.append("RenamedByTheoride");
     aRenamePath.append(llvmS::path::extension(iExePath));
 
     return aRenamePath;
@@ -121,7 +110,7 @@ public:
         mCurrentDir=GetCurrentDirName();
 
         // 一時ファイル名生成
-        std::error_code ec = llvmS::fs::createTemporaryFile("Theolizer", "txt", mTempFilePath);
+        std::error_code ec = llvmS::fs::createTemporaryFile("Theoride", "txt", mTempFilePath);
         if (ec)
         {
             mErrorMessage=ec.message();
@@ -190,22 +179,22 @@ public:
 };
 
 // ***************************************************************************
-//      TheolizerDriverであることを確認する
+//      TheorideDriverであることを確認する
 // ***************************************************************************
 
 enum CheckResult
 {
     ecrExecError,
-    ecrIsTheolizer,
-    ecrNotTheolizer
+    ecrIsTheoride,
+    ecrNotTheoride
 };
 
-CheckResult CheckTheolizer(std::string const& iExePath)
+CheckResult CheckTheoride(std::string const& iExePath)
 {
     // パラメータ生成
     llvm::opt::ArgStringList aArgv;
     aArgv.push_back(iExePath.c_str());
-    aArgv.push_back(kTheolizerVersionParam);
+    aArgv.push_back(kTheorideVersionParam);
 
     // iExePath実行
     ExecuteMan  aExecuteMan(iExePath, aArgv);
@@ -216,10 +205,10 @@ return ecrExecError;
     }
 
     // 結果判定
-    if (aExecuteMan.GetResult().find(kTheolizerMarker) != std::string::npos)
-return ecrIsTheolizer;
+    if (aExecuteMan.GetResult().find(kTheorideMarker) != std::string::npos)
+return ecrIsTheoride;
 
-    return ecrNotTheolizer;
+    return ecrNotTheoride;
 }
 
 // ***************************************************************************
@@ -240,27 +229,27 @@ std::string getCanonicalPath(std::string const& iPath)
 }
 
 // ***************************************************************************
-//      TheolizerDriver専用処理
+//      TheorideDriver専用処理
 // ***************************************************************************
 
-#define THEOLIZER_INTERNAL_PRODUCT_NAME "Theolizer"
-#define THEOLIZER_INTERNAL_COPYRIGHT    "Copyright (C) 2016 Yohinori Tahara (Theoride Technology)"
+#define THEORIDE_INTERNAL_PRODUCT_NAME "TheorideDriver "
+#define THEORIDE_INTERNAL_COPYRIGHT    "Copyright (C) 2017 Yohinori Tahara (Theoride Technology)"
 
 std::string getVersionString()
 {
-    std::string ret(THEOLIZER_INTERNAL_PRODUCT_NAME);
-    ret += THEOLIZER_INTERNAL_COPYRIGHT "\n";
+    std::string ret(THEORIDE_INTERNAL_PRODUCT_NAME);
+    ret += THEORIDE_INTERNAL_COPYRIGHT "\n";
 
     return ret;
 }
 
-int TheolizerProc(std::string const& iExePath, char const* iArg)
+int TheorideProc(std::string const& iExePath, char const* iArg)
 {
 //----------------------------------------------------------------------------
-//      TheolizerDriverであることを応答する(バージョン表示を兼ねる)
+//      TheorideDriverであることを応答する(バージョン表示を兼ねる)
 //----------------------------------------------------------------------------
 
-    if (StringRef(iArg).equals(kTheolizerVersionParam))
+    if (StringRef(iArg).equals(kTheorideVersionParam))
     {
 
         llvm::outs() << getVersionString() << "\n";
@@ -272,13 +261,13 @@ return 0;
 //----------------------------------------------------------------------------
 
 #ifndef DISABLE_REPLACE
-    bool    aDoReplace = StringRef(iArg).startswith(kTheolizerReplaceParam);
-    bool    aDoRestore = StringRef(iArg).startswith(kTheolizerRestoreParam);
+    bool    aDoReplace = StringRef(iArg).startswith(kTheorideReplaceParam);
+    bool    aDoRestore = StringRef(iArg).startswith(kTheorideRestoreParam);
 
     if (!aDoReplace && !aDoRestore)
     {
         llvm::errs() << kDiagMarker 
-                     << " Unknown theolizer parameter(" << iArg << ")\n";
+                     << " Unknown Theoride parameter(" << iArg << ")\n";
 return 1;
     }
 
@@ -299,15 +288,15 @@ return 1;
         if (aTargetPath.empty())
 return 1;
         std::string aReplacePath = makeRenamePath(aTargetPath);
-        CheckResult cr=CheckTheolizer(aTargetPath);
+        CheckResult cr=CheckTheoride(aTargetPath);
         std::error_code ec;
         switch (cr)
         {
         case ecrExecError:
             break;
 
-        case ecrNotTheolizer:
-            // 相手方がTheolizerDriver.exeでないなら置換する
+        case ecrNotTheoride:
+            // 相手方がTheorideDriver.exeでないなら置換する
             if (aDoReplace)
             {
                 llvm::outs() << "Replacing " << aTargetPath << " ...\n";
@@ -324,7 +313,7 @@ return 1;
                 llvm::outs() << "    Renamed " << aTargetPath << " to "
                              << llvmS::path::filename(aReplacePath).str() << "\n";
 
-                // TheolizerDriver.exeをターゲットへコピーする
+                // TheorideDriver.exeをターゲットへコピーする
                 ec=llvmS::fs::copy_file(iExePath, aTargetPath);
                 if (ec)
                 {
@@ -332,7 +321,7 @@ return 1;
                                  << aTargetPath << "(" << ec.message() << ")\n";
 return 1;
                 }
-                // パーミッションをTheolizerDriver.exeと合わせる。
+                // パーミッションをTheorideDriver.exeと合わせる。
                 boostF::file_status file_status=boostF::status(iExePath);
                 boostF::permissions(aTargetPath, file_status.permissions());
                 llvm::outs() << "    Copied " << iExePath << " to "
@@ -345,13 +334,13 @@ return 1;
             }
             break;
 
-        case ecrIsTheolizer:
-            // 相手方がTheolizerDriver.exeなら回復する
+        case ecrIsTheoride:
+            // 相手方がTheorideDriver.exeなら回復する
             if (aDoRestore)
             {
                 llvm::outs() << "Restoring " << aTargetPath << " ...\n";
 
-                // ターゲットがTheolizerDriver.exeなので削除する
+                // ターゲットがTheorideDriver.exeなので削除する
                 ec=llvmS::fs::remove(aTargetPath);
                 if (ec)
                 {
@@ -382,7 +371,7 @@ return 1;
             break;
 
         default:
-            DRIVER_ABORT("Unknown return code : CheckTheolizer() = %d\n", cr);
+            DRIVER_ABORT("Unknown return code : CheckTheoride() = %d\n", cr);
         }
     }
 #endif
@@ -499,9 +488,9 @@ std::vector<std::string> GetCompilerInfo
 
 // ***************************************************************************
 //      元コンパイラ・パラメータ判定
-//          iArgv+2がkTheolizerOrigCompParamで始まっている時、true返却
-//              msvc  :/Dtheolizer_original_compiler=<元コンパイラのパス>
-//              その他:--theolizer_original_compiler=<元コンパイラのパス>
+//          iArgv+2がkTheorideOrigCompParamで始まっている時、true返却
+//              msvc  :/Dtheoride_original_compiler=<元コンパイラのパス>
+//              その他:--theoride_original_compiler=<元コンパイラのパス>
 // ***************************************************************************
 
 bool isOrigCompParam(char const* iArgv)
@@ -513,7 +502,7 @@ return false;
     if (!*(iArgv+1))
 return false;
 
-    return StringRef(iArgv+2).startswith(kTheolizerOrigCompParam);
+    return StringRef(iArgv+2).startswith(kTheorideOrigCompParam);
 }
 
 // ***************************************************************************
@@ -529,7 +518,7 @@ int callParse
 
 int main(int iArgc, const char **iArgv)
 {
-    gExclusiveControl.reset(new ExclusiveControl(kTheolizerFileLock));
+    gExclusiveControl.reset(new ExclusiveControl(kTheorideFileLock));
 
 //----------------------------------------------------------------------------
 //      自exeパス名操作
@@ -597,18 +586,18 @@ return 1;
 #endif
 
 //----------------------------------------------------------------------------
-//      Theolizer用パラメータ処理
+//      Theoride用パラメータ処理
 //----------------------------------------------------------------------------
 
     // ドライバー・モード設定とマクロ定義パラメータ形式決定
     DriverMode aDriverMode = getDriverMode(llvmS::path::stem(aExePath));
 
-    // Theolizerドライバ・モード判定準備
+    // Theorideドライバ・モード判定準備
     bool aDefining=false;
-    std::string aTheolizerDoProcess = std::string("D")+kTheolizerDoProcessParam;
+    std::string aTheorideDoProcess = std::string("D")+kTheorideDoProcessParam;
 
     // パラメータ・チェック
-    bool aDoProcess = false;        // Theolizer処理実行
+    bool aDoProcess = false;        // Theoride処理実行
     bool aIsClangHelp = false;
     bool aIsVersion = false;
     bool aIsNostdinc = false;
@@ -621,16 +610,16 @@ return 1;
         if (arg == nullptr)
     continue;
 
-        // Theolizerドライバ・モード判定
-        if ((aDefining && StringRef(arg).equals(kTheolizerDoProcessParam))
-         || (StringRef(arg+1).equals(aTheolizerDoProcess)))
+        // Theorideドライバ・モード判定
+        if ((aDefining && StringRef(arg).equals(kTheorideDoProcessParam))
+         || (StringRef(arg+1).equals(aTheorideDoProcess)))
         {
             aDefining=false;
 
             aDoProcess=true;
     continue;
         }
-        else if ((aDefining && StringRef(arg).startswith(kTheolizerOrigCompParam))
+        else if ((aDefining && StringRef(arg).startswith(kTheorideOrigCompParam))
               || (isOrigCompParam(arg)))
         {
             aDefining=false;
@@ -639,7 +628,7 @@ return 1;
             if (aCurrent.second.empty())
             {
                 llvm::errs() << kDiagMarker
-                             << kTheolizerOrigCompParam << " path is null.\n";
+                             << kTheorideOrigCompParam << " path is null.\n";
 return 1;
             }
 
@@ -664,8 +653,8 @@ return 1;
         }
         aDefining=false;
 
-        if (StringRef(arg).startswith(ARG_THEOLIZER))
-return TheolizerProc(aExePath, arg);
+        if (StringRef(arg).startswith(ARG_THEORIDE))
+return TheorideProc(aExePath, arg);
         if (StringRef(arg).equals("-help"))         aIsClangHelp  = true;
         if (StringRef(arg).equals("--help"))        aIsClangHelp  = true;
         if (StringRef(arg).equals("--version"))     aIsVersion    = true;
@@ -684,13 +673,13 @@ return TheolizerProc(aExePath, arg);
     if (aOriginalPath.empty())
     {
         llvm::errs() << kDiagMarker
-                     << "No " << kTheolizerOrigCompParam << " option.\n";
+                     << "No " << kTheorideOrigCompParam << " option.\n";
 return 1;
     }
 #endif
 
 //----------------------------------------------------------------------------
-//      Theolizer解析実行判定
+//      Theoride解析実行判定
 //----------------------------------------------------------------------------
 
     if (aDoProcess)
@@ -715,7 +704,7 @@ return 1;
             // 警告・エラー表示環境準備(最低限)
             IntrusiveRefCntPtr<DiagnosticOptions> aDiagOpts = new DiagnosticOptions;
             DiagnosticConsumer* diag_client =
-                            new TheolizerDiagnosticConsumer(llvm::errs(), &*aDiagOpts);
+                            new TheorideDiagnosticConsumer(llvm::errs(), &*aDiagOpts);
             IntrusiveRefCntPtr<DiagnosticIDs> aDiagId(new DiagnosticIDs());
             DiagnosticsEngine Diags(aDiagId, &*aDiagOpts, diag_client);
 
@@ -806,7 +795,7 @@ return 1;
                 if (!command)
             continue;
 
-                // Theolizer Driver以外なら非対象
+                // Theoride Driver以外なら非対象
                 if (aExePath != command->getExecutable())
             continue;
 
@@ -846,13 +835,13 @@ return aRet;
         if (StringRef(iArgv[i]).equals(""))
     continue;
 
-        if ((aDefining && StringRef(iArgv[i]).equals(kTheolizerDoProcessParam))
-         || (StringRef(iArgv[i]+1).equals(aTheolizerDoProcess)))
+        if ((aDefining && StringRef(iArgv[i]).equals(kTheorideDoProcessParam))
+         || (StringRef(iArgv[i]+1).equals(aTheorideDoProcess)))
         {
             aDefArg=nullptr;
     continue;
         }
-        else if ((aDefining && StringRef(iArgv[i]).startswith(kTheolizerOrigCompParam))
+        else if ((aDefining && StringRef(iArgv[i]).startswith(kTheorideOrigCompParam))
               || (isOrigCompParam(iArgv[i])))
         {
             aDefArg=nullptr;
@@ -874,7 +863,7 @@ return aRet;
         }
         aDefArg=nullptr;
 
-        if (StringRef(iArgv[i]).startswith(ARG_THEOLIZER))
+        if (StringRef(iArgv[i]).startswith(ARG_THEORIDE))
     continue;
 
         aArgvForCall.push_back(iArgv[i]);

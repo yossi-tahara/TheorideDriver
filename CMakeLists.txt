@@ -1,25 +1,14 @@
 #[[###########################################################################
 
-        Theolizer Driver Project
+        Theoride Driver Project
 
-    © 2016 Theoride Technology (http://theolizer.com/) All Rights Reserved.
-    "Theolizer" is a registered trademark of Theoride Technology.
-
-    "Theolizer" License
-        In the case where you are in possession of a valid “Theolizer” License,
-        you may use this file in accordance with the terms and conditions of 
-        the use license determined by Theoride Technology.
+    © 2017 Theoride Technology (http://theolizer.com/) All Rights Reserved.
 
     General Public License Version 3 ("GPLv3")
         You may use this file in accordance with the terms and conditions of 
         GPLv3 published by Free Software Foundation.
         Please confirm the contents of GPLv3 at https://www.gnu.org/licenses/gpl.txt .
         A copy of GPLv3 is also saved in a LICENSE.TXT file.
-
-    商用ライセンス
-        あなたが有効なTheolizer商用ライセンスを保持している場合、
-        セオライド テクノロジーの定める使用許諾書の条件に従って、
-        このファイルを取り扱うことができます。
 
     General Public License Version 3(以下GPLv3)
         Free Software Foundationが公表するGPLv3の使用条件に従って、
@@ -112,10 +101,10 @@ set(BIN_DIR bin)
 #       target definition
 #-----------------------------------------------------------------------------
 
-set(THEOLIZER_DRIVER_LIST driver.cpp avoid-trouble.h header_includes.h utility.h parse.h)
+set(THEORIDE_DRIVER_LIST driver.cpp avoid-trouble.h header_includes.h utility.h parse.h)
 
-message(STATUS "Sources of TheolizerDriver")
-foreach(SOURCE IN LISTS THEOLIZER_DRIVER_LIST)
+message(STATUS "Sources of TheorideDriver")
+foreach(SOURCE IN LISTS THEORIDE_DRIVER_LIST)
     message(STATUS "${SOURCE}")
 endforeach()
 
@@ -136,40 +125,40 @@ include_directories("${LLVM_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIR}")
 link_directories("${LLVM_LIBRARY_DIRS}")
 
-#       ---<<< TheolizerDriver >>>---
+#       ---<<< TheorideDriver >>>---
 
-add_executable(TheolizerDriver ${THEOLIZER_DRIVER_LIST})
-#set_target_properties(TheolizerDriver PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE)
+add_executable(TheorideDriver ${THEORIDE_DRIVER_LIST})
+#set_target_properties(TheorideDriver PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE)
 
-target_link_libraries(TheolizerDriver ${Boost_LIBRARIES})
+target_link_libraries(TheorideDriver ${Boost_LIBRARIES})
 
 if (NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-comment")
 else()
-    add_custom_command(TARGET TheolizerDriver
+    add_custom_command(TARGET TheorideDriver
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:TheolizerDriver> $<TARGET_FILE_DIR:TheolizerDriver>/cl.exe)
+            $<TARGET_FILE:TheorideDriver> $<TARGET_FILE_DIR:TheorideDriver>/cl.exe)
 endif()
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     foreach(link_lib IN LISTS LIB_TOOLING_LIST)
-        target_link_libraries(TheolizerDriver optimized ${link_lib}.lib)
-        target_link_libraries(TheolizerDriver debug     ${link_lib}d.lib)
+        target_link_libraries(TheorideDriver optimized ${link_lib}.lib)
+        target_link_libraries(TheorideDriver debug     ${link_lib}d.lib)
     endforeach()
 else()
-    target_link_libraries(TheolizerDriver ${LIBRARY_LIST} ${LIB_TOOLING_LIST})
+    target_link_libraries(TheorideDriver ${LIBRARY_LIST} ${LIB_TOOLING_LIST})
     if (CMAKE_COMPILER_IS_MINGW)
         set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
     endif()
 endif()
 if(NOT "${WINLIB_LIST}" STREQUAL "")
-    target_link_libraries(TheolizerDriver ${WINLIB_LIST}.lib)
+    target_link_libraries(TheorideDriver ${WINLIB_LIST}.lib)
 endif()
 
 llvm_map_components_to_libnames(LLVM_LIBS ${COMPONENT_LIST})
-target_link_libraries(TheolizerDriver ${LLVM_LIBS})
+target_link_libraries(TheorideDriver ${LLVM_LIBS})
 
 message(STATUS "Boost_LIBRARIES  = ${Boost_LIBRARIES}")
 message(STATUS "LIBRARY_LIST     = ${LIBRARY_LIST}")
@@ -181,7 +170,7 @@ message(STATUS "LLVM_LIBRARY_DIRS= ${LLVM_LIBRARY_DIRS}")
 message(STATUS "LLVM_LIBS        = ${LLVM_LIBS}")
 
 # 以下デバッグ用
-get_property(LIBRARIES TARGET TheolizerDriver PROPERTY LINK_LIBRARIES)
+get_property(LIBRARIES TARGET TheorideDriver PROPERTY LINK_LIBRARIES)
 message(STATUS "LIBRARIES = ${LIBRARIES}")
 message(STATUS "CMAKE_CXX_IMPLICIT_LINK_LIBRARIES = ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES}")
 message(STATUS "CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
@@ -193,10 +182,10 @@ message(STATUS "CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
 #       install target
 #-----------------------------------------------------------
 
-install(PROGRAMS $<TARGET_FILE:TheolizerDriver> CONFIGURATIONS Release DESTINATION ${BIN_DIR})
+install(PROGRAMS $<TARGET_FILE:TheorideDriver> CONFIGURATIONS Release DESTINATION ${BIN_DIR})
 
 if (MSVC)
-    install(FILES $<TARGET_FILE:TheolizerDriver>
+    install(FILES $<TARGET_FILE:TheorideDriver>
             CONFIGURATIONS Release
             DESTINATION bin
             RENAME cl.exe)
@@ -212,11 +201,11 @@ set(ORIGINAL_COMPILER "${CMAKE_CXX_COMPILER}")
 set(PARAMETERS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 string(REPLACE " " ";" PARAMETERS "${PARAMETERS}")
 
-add_test(NAME TheolizerDriver
-    COMMAND $<TARGET_FILE:TheolizerDriver>
+add_test(NAME TheorideDriver
+    COMMAND $<TARGET_FILE:TheorideDriver>
         ""
-        -Dtheolizer_original_compiler=${ORIGINAL_COMPILER}
-        -DTHEOLIZER_DO_PROCESS
+        -Dtheoride_original_compiler=${ORIGINAL_COMPILER}
+        -DTHEORIDE_DO_PROCESS
         ${PARAMETERS}
         test.cpp
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"

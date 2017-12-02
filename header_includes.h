@@ -1,24 +1,13 @@
 ﻿//############################################################################
 //      ヘッダのインクルード
 /*
-    © 2016 Theoride Technology (http://theolizer.com/) All Rights Reserved.
-    "Theolizer" is a registered trademark of Theoride Technology.
-
-    "Theolizer" License
-        In the case where you are in possession of a valid “Theolizer” License,
-        you may use this file in accordance with the terms and conditions of 
-        the use license determined by Theoride Technology.
+    © 2017 Theoride Technology (http://theolizer.com/) All Rights Reserved.
 
     General Public License Version 3 ("GPLv3")
         You may use this file in accordance with the terms and conditions of 
         GPLv3 published by Free Software Foundation.
         Please confirm the contents of GPLv3 at https://www.gnu.org/licenses/gpl.txt .
         A copy of GPLv3 is also saved in a LICENSE.TXT file.
-
-    商用ライセンス
-        あなたが有効なTheolizer商用ライセンスを保持している場合、
-        セオライド テクノロジーの定める使用許諾書の条件に従って、
-        このファイルを取り扱うことができます。
 
     General Public License Version 3(以下GPLv3)
         Free Software Foundationが公表するGPLv3の使用条件に従って、
@@ -28,10 +17,10 @@
 */
 //############################################################################
 
-#if !defined(THEOLIZER_HEADER_INCLUDES_H)
-#define THEOLIZER_HEADER_INCLUDES_H
+#if !defined(THEORIDE_HEADER_INCLUDES_H)
+#define THEORIDE_HEADER_INCLUDES_H
 
-#define THEOLIZER_INTERNAL_DRIVER
+#define THEORIDE_INTERNAL_DRIVER
 
 // ***************************************************************************
 //      インクルード
@@ -44,11 +33,11 @@
 
 #include "avoid-trouble.h"
 
-THEOLIZER_INTERNAL_DISABLE_WARNING()
+THEORIDE_INTERNAL_DISABLE_WARNING()
 #if defined(__GNUC__)
     #pragma GCC diagnostic push
-    THEOLIZER_INTERNAL_PRAGMA(GCC diagnostic ignored "-Wstrict-aliasing")
-    THEOLIZER_INTERNAL_PRAGMA(GCC diagnostic ignored "-Wparentheses")
+    THEORIDE_INTERNAL_PRAGMA(GCC diagnostic ignored "-Wstrict-aliasing")
+    THEORIDE_INTERNAL_PRAGMA(GCC diagnostic ignored "-Wparentheses")
 #endif
 
 //----------------------------------------------------------------------------
@@ -212,6 +201,6 @@ namespace clangD=clang::driver;
 namespace boostI=boost::interprocess;
 namespace boostF=boost::filesystem;
 
-//using theolizer::internal::FineTimer;
+//using theoride::internal::FineTimer;
 
 #endif
