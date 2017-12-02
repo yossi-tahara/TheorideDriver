@@ -570,10 +570,13 @@ CustomDiag              gCustomDiag;
 struct AstInterface
 {
 //      ---<<< プリプロセスからの出力 >>>---
-//          first : #undef、second : #defineとする
-//          #define～#undefの間にあるキーを見つけるようにするため。
 
-    bool    mNotParse;      // 解析処理を行わない時true THEORIDE_NO_ANALYZE
+    // 解析処理を行わない時true
+    //  THEORIDE_NO_ANALYZEがあったらtrue
+    //  THEORIDE_DO_PROCESSがあったらfalse
+    //  トップ・レベルの要素が発生するたび(HandleTopLevelDecl)にチェックする
+    //  デフォルト値はプロジェクトによる。
+    bool    mNotParse;
 
 //      ---<<< 多重定義チェック >>>---
 
@@ -597,8 +600,7 @@ struct AstInterface
 
 //      ---<<< コンストラクタ >>>---
 
-    AstInterface() : 
-        mNotParse(false)
+    AstInterface() :  mNotParse(true)
     { }
 };
 

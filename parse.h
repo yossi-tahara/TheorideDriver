@@ -54,6 +54,11 @@ private:
         {
             mAstInterface.mNotParse=true;
         }
+        // 処理する
+        else if (aMacroName.equals("THEORIDE_DO_PROCESS"))
+        {
+            mAstInterface.mNotParse=false;
+        }
     }
 };
 
