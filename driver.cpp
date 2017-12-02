@@ -594,10 +594,8 @@ return 1;
 
     // Theorideドライバ・モード判定準備
     bool aDefining=false;
-    std::string aTheorideDoProcess = std::string("D")+kTheorideDoProcessParam;
 
     // パラメータ・チェック
-    bool aDoProcess = false;        // Theoride処理実行
     bool aIsClangHelp = false;
     bool aIsVersion = false;
     bool aIsNostdinc = false;
@@ -610,16 +608,8 @@ return 1;
         if (arg == nullptr)
     continue;
 
-        // Theorideドライバ・モード判定
-        if ((aDefining && StringRef(arg).equals(kTheorideDoProcessParam))
-         || (StringRef(arg+1).equals(aTheorideDoProcess)))
-        {
-            aDefining=false;
-
-            aDoProcess=true;
-    continue;
-        }
-        else if ((aDefining && StringRef(arg).startswith(kTheorideOrigCompParam))
+        // オリジナル・コンパイラ取り出し
+        if ((aDefining && StringRef(arg).startswith(kTheorideOrigCompParam))
               || (isOrigCompParam(arg)))
         {
             aDefining=false;
@@ -682,7 +672,7 @@ return 1;
 //      Theoride解析実行判定
 //----------------------------------------------------------------------------
 
-    if (aDoProcess)
+    if (true)
     {
         // ライセンス表示
         if ((aDriverMode != gpp) || (aIsVersion) || (aIsOptionv))
@@ -835,14 +825,8 @@ return aRet;
         if (StringRef(iArgv[i]).equals(""))
     continue;
 
-        if ((aDefining && StringRef(iArgv[i]).equals(kTheorideDoProcessParam))
-         || (StringRef(iArgv[i]+1).equals(aTheorideDoProcess)))
-        {
-            aDefArg=nullptr;
-    continue;
-        }
-        else if ((aDefining && StringRef(iArgv[i]).startswith(kTheorideOrigCompParam))
-              || (isOrigCompParam(iArgv[i])))
+        if ((aDefining && StringRef(iArgv[i]).startswith(kTheorideOrigCompParam))
+         || (isOrigCompParam(iArgv[i])))
         {
             aDefArg=nullptr;
     continue;

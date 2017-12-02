@@ -35,7 +35,6 @@ char const* kTheorideMarker = "Theoride";
 
 // TheorideDriver専用パラメータ
 char const* kTheorideOrigCompParam = "theoride_original_compiler";// =<OrigPath>
-char const* kTheorideDoProcessParam= "THEORIDE_DO_PROCESS";       // none
 
 #define ARG_THEORIDE   "--theoride"                           // 継続パラメータ
 char const* kTheorideVersionParam  = ARG_THEORIDE "-version"; // none

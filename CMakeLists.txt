@@ -205,7 +205,6 @@ add_test(NAME TheorideDriver
     COMMAND $<TARGET_FILE:TheorideDriver>
         ""
         -Dtheoride_original_compiler=${ORIGINAL_COMPILER}
-        -DTHEORIDE_DO_PROCESS
         ${PARAMETERS}
         test.cpp
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"
