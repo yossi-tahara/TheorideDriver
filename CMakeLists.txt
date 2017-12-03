@@ -24,7 +24,7 @@ cmake_minimum_required(VERSION 3.5.0)
 #       Project version
 #-----------------------------------------------------------------------------
 
-project(Driver VERSION 0.0.1)
+project(TheorideDriver VERSION 0.0.1)
 
 message(STATUS "PROJECT_VERSION=${PROJECT_VERSION}")
 
@@ -139,7 +139,7 @@ else()
     add_custom_command(TARGET TheorideDriver
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:TheorideDriver> $<TARGET_FILE_DIR:TheorideDriver>/cl.exe)
+            $<TARGET_FILE:TheorideDriver> "${CMAKE_CURRENT_SOURCE_DIR}/${BIN_DIR}/cl.exe")
 endif()
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -182,13 +182,15 @@ message(STATUS "CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
 #       install target
 #-----------------------------------------------------------
 
-install(PROGRAMS $<TARGET_FILE:TheorideDriver> CONFIGURATIONS Release DESTINATION ${BIN_DIR})
-
 if (MSVC)
-    install(FILES $<TARGET_FILE:TheorideDriver>
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${BIN_DIR}"
             CONFIGURATIONS Release
-            DESTINATION bin
-            RENAME cl.exe)
+            DESTINATION .)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/replace.bat" "${CMAKE_CURRENT_SOURCE_DIR}/restore.bat"
+            CONFIGURATIONS Release
+            DESTINATION .)
+else()
+    install(PROGRAMS $<TARGET_FILE:TheorideDriver> CONFIGURATIONS Release DESTINATION ${BIN_DIR})
 endif()
 
 #-----------------------------------------------------------------------------
