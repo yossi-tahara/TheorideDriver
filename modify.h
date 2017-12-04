@@ -20,8 +20,6 @@
 #if !defined(THEOLIZER_MODIFY_H)
 #define THEOLIZER_MODIFY_H
 
-#define ASTANALYZE_OUTPUT(...)
-
 //############################################################################
 //      ソース修正用クラス
 //############################################################################
@@ -235,7 +233,6 @@ std::string getQualifiedName(NamedDecl const* iNamedDecl, bool iSuppressUnwritte
     {
         FullSourceLoc aLoc =
             gASTContext->getFullLoc(iStartLoc).getSpellingLoc();
-llvm::outs() << "aLoc=" << aLoc.printToString(*gSourceManager) << "\n";
 
         // ;まで探す
         FileID aFileId=aLoc.getFileID();
@@ -269,7 +266,6 @@ llvm::outs() << "aLoc=" << aLoc.printToString(*gSourceManager) << "\n";
     )
     {
         SourceLocation aStartLoc = getMarkerEnd(iStartMarker->getLocEnd());
-llvm::outs() << "aStartLoc=" << aStartLoc.printToString(*gSourceManager) << "\n";
 
         auto aEnd = mAstInterface.mEndMarkerList.find(iTarget);
         // 終了マーカなし
@@ -282,16 +278,9 @@ llvm::outs() << "aStartLoc=" << aStartLoc.printToString(*gSourceManager) << "\n"
         else
         {
             SourceLocation aEndLoc = getMarkerEnd(aEnd->second);
-llvm::outs() << "---------------------------------------- getNowSource(enum)";
-llvm::outs() << getNowSource(aStartLoc, aEndLoc);
-llvm::outs() << "\n----------------------------------------\n";
-llvm::outs() << "    " << aEnd->second.printToString(*gSourceManager) << "\n";
-llvm::outs() << "    " << aStartLoc.printToString(*gSourceManager) << "\n";
-llvm::outs() << "    " << aEndLoc.printToString(*gSourceManager) << "\n";
             // 変更があれば修正する
             if (getNowSource(aStartLoc, aEndLoc) != iString)
             {
-llvm::outs() << "    changed !! \n";
                 replaceString(aStartLoc, aEndLoc, std::move(iString));
             }
         }
@@ -338,13 +327,7 @@ public:
         aSource << "#undef THEORIDE_ENUM\n";
         aSource << "void GenerationMarkerEnd(" << aEnumName << ");";
 
-llvm::outs() << "---------------------------------------- enum";
-llvm::outs() << aSource.str();
-llvm::outs() << "\n----------------------------------------\n";
-
         modifySource(iStartMarker, iTargetEnum, aSource.str());
-
-llvm::outs().flush();
     }
 
 // ***************************************************************************
@@ -376,12 +359,9 @@ llvm::outs().flush();
     {
 
         SourceLocation aBegin = iStartMarker->getSourceRange().getBegin();
-llvm::outs() << "    iStartMarker : " << aBegin.printToString(*gSourceManager) << "\n";
         FullSourceLoc aLoc =
             gASTContext->getFullLoc(aBegin).getSpellingLoc();
-llvm::outs() << "aLoc=" << aLoc.printToString(*gSourceManager) << "\n";
         unsigned indent =aLoc.getSpellingColumnNumber()-1;
-llvm::outs() << "indent=" << indent << "\n";
         std::string aIndent(indent, ' ');
 
         std::string aClassName = getQualifiedName(iTargetClass);
@@ -442,13 +422,7 @@ llvm::outs() << "indent=" << indent << "\n";
         aSource << "\n" << aIndent << "#undef THEORIDE_CLASS";
         aSource << "\n" << aIndent << "void GenerationMarkerEnd(" << aClassName << ");";
 
-llvm::outs() << "---------------------------------------- class";
-llvm::outs() << aSource.str();
-llvm::outs() << "\n----------------------------------------\n";
-
         modifySource(iStartMarker, iTargetClass, aSource.str());
-
-llvm::outs().flush();
     }
 
 // ***************************************************************************
@@ -457,62 +431,38 @@ llvm::outs().flush();
 
     void saveSources()
     {
-//          ---<<< ソース保存 >>>---
-
-        ASTANALYZE_OUTPUT("mModifiedFiles.size()=", mModifiedFiles.size());
-
         // 致命的エラーが発生していたら保存しない
         if (gCustomDiag.getDiags().hasFatalErrorOccurred())
-        {
-            ASTANALYZE_OUTPUT("HandleTranslationUnit() aborted by Fatal Error.");
     return;
-        }
         // Theolizerがエラー検出していたら保存しない
         if (gCustomDiag.hasErrorOccurred())
-        {
-            ASTANALYZE_OUTPUT("HandleTranslationUnit() aborted by Error.");
     return;
-        }
 
         // 修正ファイルがないなら保存しない
         if (!mModifiedFiles.size())
     return;
 
-//      ---<<< 保存処理 >>>---
-
         // 修正開始してみる。他が修正していたら、再処理する
         boostI::upgradable_lock<ExclusiveControl> lock_try(*gExclusiveControl,boostI::try_to_lock);
-        ASTANALYZE_OUTPUT("pre lock_try");
         if (!lock_try)
-        {
-            ASTANALYZE_OUTPUT("post lock_try(1)");
     return;
-        }
-        ASTANALYZE_OUTPUT("post lock_try(2)");
 
         // 他のプロセスのファイル開放待ち
         boostI::scoped_lock<ExclusiveControl> lock(*gExclusiveControl);
 
         for (auto aFileId2 : mModifiedFiles)
         {
-            const FileEntry* file = gSourceManager->getFileEntryForID(aFileId2);
-            ASTANALYZE_OUTPUT(file->getName(), " ==============================================\n");
             std::string file_data;
             llvm::raw_string_ostream ss(file_data);
             mRewriter.getEditBuffer(aFileId2).write(ss);
             ss.flush();
-            std::string file_body=normalizeLF(std::move(file_data));
-            ASTANALYZE_OUTPUT(file_body);
-            ASTANALYZE_OUTPUT("==============================================");
         }
 
         // 保存処理
-        bool error=mRewriter.overwriteChangedFiles();
-        ASTANALYZE_OUTPUT("overwriteChangedFiles()=", error);
+        mRewriter.overwriteChangedFiles();
 
         // 保存処理を実行したら、mRetryAST(最新版変更によるリトライ)をgRetryASTへ反映
         gRetryAST = mRetryAST;
-        ASTANALYZE_OUTPUT("gRetryAST=", gRetryAST);
     }
 
 // ***************************************************************************

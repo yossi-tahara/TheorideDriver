@@ -150,8 +150,6 @@ public:
         if (!iFunctionDecl->getName().startswith("GenerationMarker"))
     return true;
 
-        llvm::outs() << iFunctionDecl->getNameAsString() << "\n";
-
 //      ---<<< 処理対象判定 >>>---
 
         // GenerationMarkerEnd()処理中(自動生成ソース範囲調査中)
@@ -219,8 +217,6 @@ public:
             }
 
             aIncFileName = pullupString(aDefault);
-llvm::outs() << "    aIncFileName=" << aIncFileName << "\n";
-llvm::outs().flush();
             if (aIncFileName.empty())
             {
                 gCustomDiag.ErrorReport(aParam->getLocation(),
@@ -241,9 +237,6 @@ llvm::outs().flush();
         {
         case Type::Enum:
             {
-llvm::outs() << "enum : " << qt.getAsString() << "\n";
-llvm::outs().flush();
-
                 // Decl*取り出し
                 EnumType const* et = qt->getAs<EnumType>();
                 ERROR(!et, iFunctionDecl, true);
@@ -284,9 +277,6 @@ llvm::outs().flush();
 
         case Type::Record:
             {
-llvm::outs() << "class : " << qt.getAsString() << "\n";
-llvm::outs().flush();
-
                 // Decl*取り出し
                 CXXRecordDecl* aTargetClass=qt->getAsCXXRecordDecl();
                 ERROR(!aTargetClass, iFunctionDecl, true);
@@ -586,8 +576,6 @@ int parse
 //----------------------------------------------------------------------------
 //      CommonOptionsParserへ渡すためのパラメータ生成
 //----------------------------------------------------------------------------
-llvm::outs() << "parse(" << iTarget << ")\n";
-llvm::outs().flush();
 
     llvm::opt::ArgStringList aArgStringList;
 

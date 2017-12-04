@@ -566,6 +566,7 @@ return 1;
 //      パラメータ取り出し
 //----------------------------------------------------------------------------
 
+#if 0
     for (int i=0; i < iArgc; ++i)
     {
         llvm::outs() << "    iArgv[" << i << "] = ";
@@ -580,6 +581,7 @@ return 1;
         llvm::outs() << "\n";
     }
     llvm::outs().flush();
+#endif
 
     // パラメータをaArgvへ設定する
     SmallVector<char const*, 256> aArgv;
@@ -706,14 +708,12 @@ return 1;
     if (true)
     {
         // ライセンス表示
-#if 0
         if ((aDriverMode != gpp) || (aIsVersion) || (aIsOptionv))
         {
             llvm::outs() << getVersionString() << "\n";
             llvm::outs() << "\n";
             llvm::outs().flush();
         }
-#endif
 
 //----------------------------------------------------------------------------
 //      パラメータをclang用に変換する
