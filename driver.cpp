@@ -215,17 +215,48 @@ return ecrIsTheoride;
 //      シンボリック・リンクを展開する
 // ***************************************************************************
 
+#ifdef _WIN32
+std::wstring convertUtf8ToUtf16(std::string const& iString);
+std::string convertUtf16ToUtf8(std::wstring const& iString);
+#endif
+
 std::string getCanonicalPath(std::string const& iPath)
 {
+#ifdef _WIN32
+    // 文字コード変換する(UTF-8 → UTF-16)
+    std::wstring aPath=convertUtf8ToUtf16(iPath);
     boost::system::error_code ec;
-    boostF::path aCanonicalPath = boostF::canonical(iPath, ec);
-
+    boostF::path aCanonicalPath = boostF::canonical(aPath, ec);
     if (ec)
     {
         llvm::errs() << kDiagMarker << "Not found " << iPath << "\n";
     }
-
+    // 文字コード変換する(UTF-16 → UTF-8)
+    return convertUtf16ToUtf8(aCanonicalPath.wstring());
+#else
+    boost::system::error_code ec;
+    boostF::path aCanonicalPath = boostF::canonical(iPath, ec);
+    if (ec)
+    {
+        llvm::errs() << kDiagMarker << "Not found " << iPath << "\n";
+    }
     return aCanonicalPath.string();
+#endif
+}
+
+// ***************************************************************************
+//      ファイルの状態（パーミッション）を取り出す
+// ***************************************************************************
+
+boostF::file_status getFileStatus(std::string const& iPath)
+{
+#ifdef _WIN32
+    // 文字コード変換する(UTF-8 → UTF-16)
+    std::wstring aPath=convertUtf8ToUtf16(iPath);
+    return boostF::status(aPath);
+#else
+    return boostF::status(iPath);
+#endif
 }
 
 // ***************************************************************************
@@ -322,7 +353,7 @@ return 1;
 return 1;
                 }
                 // パーミッションをTheorideDriver.exeと合わせる。
-                boostF::file_status file_status=boostF::status(iExePath);
+                boostF::file_status file_status=getFileStatus(iExePath);
                 boostF::permissions(aTargetPath, file_status.permissions());
                 llvm::outs() << "    Copied " << iExePath << " to "
                              << llvmS::path::filename(aTargetPath).str() << "\n";
@@ -879,6 +910,24 @@ return aRet;
 
 #undef ERROR
 #undef ERROR_ST
+
+// ***************************************************************************
+//      Windows向け文字コード変換
+// ***************************************************************************
+
+#ifdef _WIN32
+#include <boost/locale.hpp>
+namespace boostLC=boost::locale::conv;
+
+std::wstring convertUtf8ToUtf16(std::string const& iString)
+{
+    return boostLC::utf_to_utf<wchar_t, char>(iString);
+}
+std::string convertUtf16ToUtf8(std::wstring const& iString)
+{
+    return boostLC::utf_to_utf<char, wchar_t>(iString);
+}
+#endif
 
 //############################################################################
 //      コンパイラの相違点を吸収する
