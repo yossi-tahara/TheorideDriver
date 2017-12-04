@@ -706,12 +706,14 @@ return 1;
     if (true)
     {
         // ライセンス表示
+#if 0
         if ((aDriverMode != gpp) || (aIsVersion) || (aIsOptionv))
         {
             llvm::outs() << getVersionString() << "\n";
             llvm::outs() << "\n";
             llvm::outs().flush();
         }
+#endif
 
 //----------------------------------------------------------------------------
 //      パラメータをclang用に変換する
