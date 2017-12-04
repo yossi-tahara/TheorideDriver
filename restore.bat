@@ -10,7 +10,7 @@ if NOT %ERRORLEVEL% EQU 0 (
 )
 
 call bin\2017.bat restore
-call bin\2015.bat restore
+rem call bin\2015.bat restore
 
 :End
 

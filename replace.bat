@@ -10,7 +10,7 @@ if NOT %ERRORLEVEL% EQU 0 (
 )
 
 call bin\2017.bat replace
-call bin\2015.bat replace
+rem call bin\2015.bat replace
 
 :End
 
