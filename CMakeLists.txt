@@ -101,7 +101,7 @@ set(BIN_DIR bin)
 #       target definition
 #-----------------------------------------------------------------------------
 
-set(THEORIDE_DRIVER_LIST driver.cpp avoid-trouble.h header_includes.h utility.h parse.h)
+set(THEORIDE_DRIVER_LIST driver.cpp avoid-trouble.h header_includes.h utility.h parse.h modify.h)
 
 message(STATUS "Sources of TheorideDriver")
 foreach(SOURCE IN LISTS THEORIDE_DRIVER_LIST)

@@ -80,7 +80,7 @@ public:
     {
         if (iCXXRecordDecl->isThisDeclarationADefinition())
         {
-            enumerateDecl(iCXXRecordDecl, mSearchEnd);
+            enumerateDecl(iCXXRecordDecl);
         }
         return true;
     }
@@ -154,22 +154,8 @@ public:
 
 //      ---<<< 処理対象判定 >>>---
 
-        // GenerationMarkerStart()処理中
-        if (!mSearchEnd)
-        {
-            if (iFunctionDecl->getName() != "GenerationMarkerStart")
-    return true;
-
-            if (iFunctionDecl->param_size() != 2)
-            {
-                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
-                    "GenerationMarkerStart() has 2 parameters. Second is inc-file path.");
-    return true;
-            }
-        }
-
-        // GenerationMarkerEnd()処理中
-        else
+        // GenerationMarkerEnd()処理中(自動生成ソース範囲調査中)
+        if (!mModifing)
         {
             if (iFunctionDecl->getName() != "GenerationMarkerEnd")
     return true;
@@ -182,10 +168,24 @@ public:
             }
         }
 
+        // GenerationMarkerStart()処理中(ソース生成中)
+        else
+        {
+            if (iFunctionDecl->getName() != "GenerationMarkerStart")
+    return true;
+
+            if (iFunctionDecl->param_size() != 2)
+            {
+                gCustomDiag.ErrorReport(iFunctionDecl->getLocation(),
+                    "GenerationMarkerStart() has 2 parameters. Second is inc-file path.");
+    return true;
+            }
+        }
+
 //      ---<<< 第2パラメータのデフォルト値取り出し >>>---
 
-        std::string aString;
-        if (!mSearchEnd)
+        std::string aIncFileName;
+        if (mModifing)
         {
             // 第2パラメータがchar const*であることをチェック
             bool aIsCharConstPointer = false;
@@ -218,10 +218,10 @@ public:
     return true;
             }
 
-            aString = pullupString(aDefault);
-llvm::outs() << "    aString=" << aString << "\n";
+            aIncFileName = pullupString(aDefault);
+llvm::outs() << "    aIncFileName=" << aIncFileName << "\n";
 llvm::outs().flush();
-            if (aString.empty())
+            if (aIncFileName.empty())
             {
                 gCustomDiag.ErrorReport(aParam->getLocation(),
                     "GenerationMarkerStart() unknown error.");
@@ -251,7 +251,16 @@ llvm::outs().flush();
                 ERROR(!aTargetEnum, iFunctionDecl, true);
 
                 // 処理
-                if (!mSearchEnd)
+                if (!mModifing)
+                {
+                    if (!mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
+    return true;
+                    }
+                }
+                else
                 {
                     if (!aTargetEnum->isThisDeclarationADefinition())
                     {
@@ -268,16 +277,7 @@ llvm::outs().flush();
                     }
 
                     // ソース生成
-
-                }
-                else
-                {
-                    if (!mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation()))
-                    {
-                        gCustomDiag.ErrorReport(aParam->getLocation(),
-                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
-    return true;
-                    }
+                    mModifySource->createEnum(aTargetEnum, aIncFileName, iFunctionDecl);
                 }
             }
             break;
@@ -288,20 +288,29 @@ llvm::outs() << "class : " << qt.getAsString() << "\n";
 llvm::outs().flush();
 
                 // Decl*取り出し
-                CXXRecordDecl* aCXXRecordDecl=qt->getAsCXXRecordDecl();
-                ERROR(!aCXXRecordDecl, iFunctionDecl, true);
+                CXXRecordDecl* aTargetClass=qt->getAsCXXRecordDecl();
+                ERROR(!aTargetClass, iFunctionDecl, true);
 
                 // 処理
-                if (!mSearchEnd)
+                if (!mModifing)
                 {
-                    if (!aCXXRecordDecl->isThisDeclarationADefinition())
+                    if (!mAstInterface.addEndMarker(aTargetClass, iFunctionDecl->getLocation()))
+                    {
+                        gCustomDiag.ErrorReport(aParam->getLocation(),
+                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
+    return true;
+                    }
+                }
+                else
+                {
+                    if (!aTargetClass->isThisDeclarationADefinition())
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerStart() needs class/struct definition.");
     return true;
                     }
 
-                    if (!mAstInterface.addStartMarker(aCXXRecordDecl,iFunctionDecl->getLocation()))
+                    if (!mAstInterface.addStartMarker(aTargetClass,iFunctionDecl->getLocation()))
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerStart() multiple definition(%0).") <<qt.getAsString();
@@ -309,16 +318,7 @@ llvm::outs().flush();
                     }
 
                     // ソース生成
-
-                }
-                else
-                {
-                    if (!mAstInterface.addEndMarker(aCXXRecordDecl, iFunctionDecl->getLocation()))
-                    {
-                        gCustomDiag.ErrorReport(aParam->getLocation(),
-                            "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
-    return true;
-                    }
+                    mModifySource->createClass(aTargetClass, aIncFileName, iFunctionDecl);
                 }
             }
             break;
@@ -341,11 +341,11 @@ llvm::outs().flush();
         if (name.equals("std"))
         {
             AutoFalse auto_false(mIsStdSpace);
-            enumerateDecl(iNamespaceDecl, mSearchEnd);
+            enumerateDecl(iNamespaceDecl);
     return true;
         }
 
-        enumerateDecl(iNamespaceDecl, mSearchEnd);
+        enumerateDecl(iNamespaceDecl);
         return true;
     }
 
@@ -356,11 +356,11 @@ llvm::outs().flush();
         switch (iLinkageSpecDecl->getLanguage())
         {
         case LinkageSpecDecl::lang_c:           // "C" : NOP
-            enumerateDecl(iLinkageSpecDecl, mSearchEnd);
+            enumerateDecl(iLinkageSpecDecl);
             break;
 
         case LinkageSpecDecl::lang_cxx:         // "C++"
-            enumerateDecl(iLinkageSpecDecl, mSearchEnd);
+            enumerateDecl(iLinkageSpecDecl);
             break;
         }
         return true;
@@ -370,15 +370,24 @@ llvm::outs().flush();
 //      Declリスト1レベルの枚挙処理
 //----------------------------------------------------------------------------
 
-    bool mSearchEnd;
+    bool mModifing;
 public:
-    void enumerateDecl(DeclContext *iDeclContext, bool iSearchEnd)
+    void enumerateDecl(DeclContext *iDeclContext)
     {
-        mSearchEnd = iSearchEnd;
         for (auto decl : iDeclContext->decls())
         {
             Visit(decl);
         }
+    }
+
+//----------------------------------------------------------------------------
+//      ソース生成開始
+//----------------------------------------------------------------------------
+
+    void startModifySource()
+    {
+        mModifing = true;
+        mModifySource.reset(new ModifySource(mAstInterface));
     }
 
 //----------------------------------------------------------------------------
@@ -388,15 +397,16 @@ public:
 //      ---<<< 出力 >>>---
 
 private:
-    AstInterface&       mAstInterface;          // ソース修正処理とのI/F
+    AstInterface&                   mAstInterface;  // ソース修正処理とのI/F
+    std::unique_ptr<ModifySource>   mModifySource;  // ソース修正用クラス
 
 //      ---<<< 内部処理 >>>---
 
-    bool    mIsStdSpace;                        // std名前空間処理中
+    bool    mIsStdSpace;                            // std名前空間処理中
 
 public:
-    ASTVisitor(AstInterface& iAstInterface) :
-        mSearchEnd(false),
+    ASTVisitor(AstInterface& iAstInterface, ASTContext* iASTContext) :
+        mModifing(false),
         mAstInterface(iAstInterface),
         mIsStdSpace(false)
     { }
@@ -431,14 +441,16 @@ private:
 //      AST解析とソース修正処理呼び出し
 //----------------------------------------------------------------------------
 
-    bool    mSearchEnd;
     virtual void HandleTranslationUnit(ASTContext &iContext)
     {
         // GenerationMarkerEnd()を見つけておく
-        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl(), true);
+        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl());
+
+        // ソース生成開始
+        mASTVisitor.startModifySource();
 
         // GenerationMarkerStart()を処理する
-        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl(), false);
+        mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl());
     }
 
 //----------------------------------------------------------------------------
@@ -453,9 +465,9 @@ private:
 
 public:
     explicit TheorideASTConsumer(CompilerInstance *iCompilerInstance) :
-                    mPreprocessor(iCompilerInstance->getPreprocessor()),
-                    mASTVisitor(mAstInterface),
-                    mMadeDefaultSource(false)
+        mPreprocessor(iCompilerInstance->getPreprocessor()),
+        mASTVisitor(mAstInterface, &(iCompilerInstance->getASTContext())),
+        mMadeDefaultSource(false)
     {
         // グローバル変数群の初期化
         gCompilerInstance = iCompilerInstance;

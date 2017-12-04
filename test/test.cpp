@@ -14,10 +14,20 @@ enum EnumTest
 
 void GenerationMarkerStart(EnumTest, char const* inc="Enum.inc");
 
-class ClassTest;
-void GenerationMarkerStart(ClassTest, char const* inc=kStr2);
+class PublicBase
+{
+    unsigned int    mUInt;
+};
+class ProtectedBase
+{
+    unsigned short  mUShort;
+};
+class PrivateBase
+{
+    unsigned char   mUChar;
+};
 
-class ClassTest
+class ClassTest : public PublicBase, protected ProtectedBase, private PrivateBase
 {
     EnumTest    mEnumTest;
     int         mInt;

@@ -36,7 +36,7 @@
 
 #include "header_includes.h"    // 必要な外部ヘッダのインクルード
 #include "utility.h"            // ユーティリティ
-//#include "modify.h"             // ソース修正
+#include "modify.h"             // ソース修正
 #include "parse.h"              // AST解析と必要情報収集
 
 // ***************************************************************************
