@@ -438,10 +438,12 @@ private:
     virtual bool HandleTopLevelDecl (DeclGroupRef iDeclGroupRef)
     {
         // 致命的エラーが発生していたら解析しない
+#if 0   // インクルード・ファイルなしも致命的エラーになるため、許可する
         if (gCustomDiag.getDiags().hasFatalErrorOccurred())
         {
             mAstInterface.mNotParse=true;
         }
+#endif
 
         return !mAstInterface.mNotParse;
     }

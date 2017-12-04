@@ -399,9 +399,10 @@ public:
             gLastErrorMessage=aMessage + "\n" + aLocation;
         }
 
+        // インクルード・ファイルなしも致命的エラーになるため、致命的エラーも許可する
         // 致命的エラーやTheorideエラーを反映する
-        if ((iDiagLevel == clang::DiagnosticsEngine::Level::Fatal)
-         || (StringRef(aMessage).startswith(kDiagMarker)))
+        if (/*(iDiagLevel == clang::DiagnosticsEngine::Level::Fatal)
+         || */(StringRef(aMessage).startswith(kDiagMarker)))
         {
             clang::TextDiagnosticPrinter::HandleDiagnostic(iDiagLevel, iInfo);
             mHasErrorOccurred=true;

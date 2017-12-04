@@ -205,9 +205,15 @@ string(REPLACE " " ";" PARAMETERS "${PARAMETERS}")
 
 add_test(NAME TheorideDriver
     COMMAND $<TARGET_FILE:TheorideDriver>
-        ""
         -Dtheoride_original_compiler=${ORIGINAL_COMPILER}
         ${PARAMETERS}
         test.cpp
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"
 )
+add_test(NAME Test
+    COMMAND test.exe
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test"
+)
+
+set_property(TEST TheorideDriver PROPERTY RUN_SERIAL)
+set_property(TEST Test           PROPERTY RUN_SERIAL)
