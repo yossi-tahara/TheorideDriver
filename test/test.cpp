@@ -13,6 +13,15 @@ enum EnumTest
 };
 
 void GenerationMarkerStart(EnumTest, char const* inc="Enum.inc");
+#define THEORIDE_ENUM EnumTest
+#define THEORIDE_ENUM_LIST()\
+    THEORIDE_ELEMENT(Symbol0)\
+    THEORIDE_ELEMENT(Symbol1)\
+    THEORIDE_ELEMENT(Symbol2)
+#include "Enum.inc"
+#undef THEORIDE_ENUM_LIST
+#undef THEORIDE_ENUM
+void GenerationMarkerEnd(EnumTest);
 
 class PublicBase
 {
@@ -38,6 +47,19 @@ public:
     { }
 
     void GenerationMarkerStart(ClassTest, char const* inc="Class.inc");
+#define THEORIDE_CLASS ClassTest
+#define THEORIDE_BASE_LIST()\
+    THEORIDE_BASE_PUBLIC(PublicBase)\
+    THEORIDE_BASE_PROTECTED(ProtectedBase)\
+    THEORIDE_BASE_PRIVATE(PrivateBase)
+#define THEORIDE_ELEMENT_LIST()\
+    THEORIDE_ELEMENT_PRIVATE(mEnumTest)\
+    THEORIDE_ELEMENT_PRIVATE(mInt)
+#include "Class.inc"
+#undef THEORIDE_ELEMENT_LIST
+#undef THEORIDE_BASE_LIST
+#undef THEORIDE_CLASS
+void GenerationMarkerEnd(ClassTest);
 };
 
 int main()

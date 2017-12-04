@@ -580,21 +580,19 @@ struct AstInterface
 
 //      ---<<< 多重定義チェック >>>---
 
-    std::map<clang::TagDecl*, FullSourceLoc>    mStartMarkerList;
-    bool addStartMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
+    std::map<clang::TagDecl*, SourceLocation>    mStartMarkerList;
+    bool addStartMarker(clang::TagDecl* iTarget, SourceLocation iLoc)
     {
-        FullSourceLoc aLoc = gASTContext->getFullLoc(iLoc).getSpellingLoc();
-        auto ret = mStartMarkerList.emplace(iTagDecl, aLoc);
+        auto ret = mStartMarkerList.emplace(iTarget, iLoc);
         return ret.second;
     }
 
 //      ---<<< 自動生成終了位置 >>>---
 
-    std::map<clang::TagDecl*, FullSourceLoc>    mEndMarkerList;
-    bool addEndMarker(clang::TagDecl* iTagDecl, SourceLocation iLoc)
+    std::map<clang::TagDecl*, SourceLocation>    mEndMarkerList;
+    bool addEndMarker(clang::TagDecl* iTarget, SourceLocation iLoc)
     {
-        FullSourceLoc aLoc = gASTContext->getFullLoc(iLoc).getSpellingLoc();
-        auto ret = mEndMarkerList.emplace(iTagDecl, aLoc);
+        auto ret = mEndMarkerList.emplace(iTarget, iLoc);
         return ret.second;
     }
 

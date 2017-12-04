@@ -253,7 +253,7 @@ llvm::outs().flush();
                 // 処理
                 if (!mModifing)
                 {
-                    if (!mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocation()))
+                    if (!mAstInterface.addEndMarker(aTargetEnum, iFunctionDecl->getLocEnd()))
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
@@ -269,7 +269,7 @@ llvm::outs().flush();
     return true;
                     }
 
-                    if (!mAstInterface.addStartMarker(aTargetEnum, iFunctionDecl->getLocation()))
+                    if (!mAstInterface.addStartMarker(aTargetEnum, iFunctionDecl->getLocEnd()))
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerStart() multiple definition(%0).") <<qt.getAsString();
@@ -294,7 +294,7 @@ llvm::outs().flush();
                 // 処理
                 if (!mModifing)
                 {
-                    if (!mAstInterface.addEndMarker(aTargetClass, iFunctionDecl->getLocation()))
+                    if (!mAstInterface.addEndMarker(aTargetClass, iFunctionDecl->getLocEnd()))
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerEnd() multiple definition(%0).") << qt.getAsString();
@@ -310,7 +310,7 @@ llvm::outs().flush();
     return true;
                     }
 
-                    if (!mAstInterface.addStartMarker(aTargetClass,iFunctionDecl->getLocation()))
+                    if (!mAstInterface.addStartMarker(aTargetClass,iFunctionDecl->getLocEnd()))
                     {
                         gCustomDiag.ErrorReport(aParam->getLocation(),
                             "GenerationMarkerStart() multiple definition(%0).") <<qt.getAsString();
@@ -391,6 +391,15 @@ public:
     }
 
 //----------------------------------------------------------------------------
+//      ソース保存
+//----------------------------------------------------------------------------
+
+    void saveSources()
+    {
+        mModifySource->saveSources();
+    }
+
+//----------------------------------------------------------------------------
 //      基本
 //----------------------------------------------------------------------------
 
@@ -451,6 +460,9 @@ private:
 
         // GenerationMarkerStart()を処理する
         mASTVisitor.enumerateDecl(iContext.getTranslationUnitDecl());
+
+        // ソース保存
+        mASTVisitor.saveSources();
     }
 
 //----------------------------------------------------------------------------
