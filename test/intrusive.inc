@@ -1,7 +1,7 @@
 ﻿#define THEORIDE_STRINGIZE(...)       THEORIDE_STRINGIZE_I(__VA_ARGS__)
 #define THEORIDE_STRINGIZE_I(...)     #__VA_ARGS__ ""
 
-friend std::string getString(THEORIDE_CLASS const& iClass, unsigned iIndent=0)
+friend std::string to_string(THEORIDE_CLASS const& iClass, unsigned iIndent=0)
 {
     std::stringstream   ss;
     std::string         aIndent0(iIndent*4, ' ');
@@ -14,24 +14,24 @@ friend std::string getString(THEORIDE_CLASS const& iClass, unsigned iIndent=0)
 
     #define THEORIDE_BASE_PUBLIC(dBase)\
         ss << ",\n" << aIndent1 << "\"(" #dBase ")\":"\
-           << getString(static_cast<dBase>(iClass), iIndent+1);
+           << to_string(static_cast<dBase>(iClass), iIndent+1);
 
     #define THEORIDE_BASE_PROTECTED(dBase)\
         ss << ",\n" << aIndent1 << "\"(" #dBase ")\":"\
-           << getString(static_cast<dBase>(iClass), iIndent+1);
+           << to_string(static_cast<dBase>(iClass), iIndent+1);
 
     #define THEORIDE_BASE_PRIVATE(dBase)\
         ss << ",\n" << aIndent1 << "\"(" #dBase ")\":"\
-           << getString(static_cast<dBase>(iClass), iIndent+1);
+           << to_string(static_cast<dBase>(iClass), iIndent+1);
 
     #define THEORIDE_ELEMENT_PUBLIC(dElement)\
-        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << getString(iClass.dElement, iIndent+1);
+        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << to_string(iClass.dElement, iIndent+1);
 
     #define THEORIDE_ELEMENT_PROTECTED(dElement)\
-        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << getString(iClass.dElement, iIndent+1);
+        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << to_string(iClass.dElement, iIndent+1);
 
     #define THEORIDE_ELEMENT_PRIVATE(dElement)\
-        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << getString(iClass.dElement, iIndent+1);
+        ss << ",\n" << aIndent1 << "\"" #dElement "\":" << to_string(iClass.dElement, iIndent+1);
 
     THEORIDE_BASE_LIST()
     THEORIDE_ELEMENT_LIST()
@@ -49,7 +49,7 @@ friend std::string getString(THEORIDE_CLASS const& iClass, unsigned iIndent=0)
 
 friend std::ostream& operator<<(std::ostream& os, THEORIDE_CLASS iClass)
 {
-    os << getString(iClass);
+    os << to_string(iClass);
     return os;
 }
 

@@ -9,7 +9,7 @@
 #include <sstream>
 
 template<typename tType>
-std::string getString(tType iValue , unsigned=0)
+std::string to_string(tType iValue , unsigned=0)
 {
     return std::to_string(iValue);
 }
