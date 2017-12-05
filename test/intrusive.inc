@@ -20,8 +20,9 @@ friend std::string getString(THEORIDE_CLASS const& iClass, unsigned iIndent=0)
         ss << ",\n" << aIndent1 << "\"(" #dBase ")\":"\
            << getString(static_cast<dBase>(iClass), iIndent+1);
 
-    // private継承クラスはアクセスできない
-    #define THEORIDE_BASE_PRIVATE(dBase)
+    #define THEORIDE_BASE_PRIVATE(dBase)\
+        ss << ",\n" << aIndent1 << "\"(" #dBase ")\":"\
+           << getString(static_cast<dBase>(iClass), iIndent+1);
 
     #define THEORIDE_ELEMENT_PUBLIC(dElement)\
         ss << ",\n" << aIndent1 << "\"" #dElement "\":" << getString(iClass.dElement, iIndent+1);
